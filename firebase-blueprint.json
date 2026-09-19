@@ -1,0 +1,223 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Perfil público de um artista ou observador na comunidade UPMM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 80 },
+        "username": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 120 },
+        "avatar": { "type": "string", "maxLength": 2048 },
+        "bio": { "type": "string", "maxLength": 300 },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "level": { "type": "string", "enum": ["Observador", "Criador", "Ativista Visual"] },
+        "responsa": { "type": "number" },
+        "vibe": { "type": "number" },
+        "badges": { "type": "array" },
+        "completedChallenges": { "type": "array" },
+        "googleLinked": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name", "level", "responsa", "vibe"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Foto base ou remix de arte periférica registrado no mapa ou arena",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorName": { "type": "string", "maxLength": 80 },
+        "title": { "type": "string", "maxLength": 120 },
+        "imageUrl": { "type": "string", "maxLength": 2048 },
+        "tags": { "type": "array" },
+        "vibeCount": { "type": "number" },
+        "type": { "type": "string", "enum": ["base", "remix"] },
+        "originalPhotoId": { "type": "string", "maxLength": 128 },
+        "challengeId": { "type": "string", "maxLength": 128 },
+        "battleWins": { "type": "number" },
+        "battleLosses": { "type": "number" },
+        "battleStreak": { "type": "number" },
+        "location": { "type": "object" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "imageUrl", "type"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comentário da comunidade em fotos, remixes ou murais",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "targetType": { "type": "string", "enum": ["photo", "spot"] },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 80 },
+        "userAvatar": { "type": "string", "maxLength": 2048 },
+        "text": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "number" },
+        "likes": { "type": "number" }
+      },
+      "required": ["id", "targetId", "targetType", "userId", "userName", "text", "createdAt"]
+    },
+    "GraffitiSpot": {
+      "title": "GraffitiSpot",
+      "description": "Muro mapeado para intervenção artística urbana em Palmas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 80 },
+        "title": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["permitido", "sugerido"] },
+        "status": { "type": "string", "enum": ["ativo", "analise"] },
+        "photoUrl": { "type": "string", "maxLength": 2048 },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "address": { "type": "string", "maxLength": 250 },
+        "landmark": { "type": "string", "maxLength": 150 },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "userName", "title", "type", "neighborhood", "lat", "lng"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Desafio semanal temático de arte e valorização periférica",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "subtitle": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 600 },
+        "rewardResponsa": { "type": "number" },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "rewardBadgeId": { "type": "string", "maxLength": 60 },
+        "tags": { "type": "array" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "endDate": { "type": "string", "maxLength": 30 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "title", "description", "rewardResponsa", "rewardBadgeId"]
+    },
+    "RemixNotification": {
+      "title": "RemixNotification",
+      "description": "Notificação gerada quando uma foto original é remixada por outro artista",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "recipientUserId": { "type": "string", "maxLength": 128 },
+        "remixerId": { "type": "string", "maxLength": 128 },
+        "remixerName": { "type": "string", "maxLength": 80 },
+        "remixerAvatar": { "type": "string", "maxLength": 2048 },
+        "remixerNeighborhood": { "type": "string", "maxLength": 100 },
+        "originalPhotoId": { "type": "string", "maxLength": 128 },
+        "originalPhotoTitle": { "type": "string", "maxLength": 120 },
+        "originalPhotoUrl": { "type": "string", "maxLength": 2048 },
+        "remixPhotoId": { "type": "string", "maxLength": 128 },
+        "remixPhotoTitle": { "type": "string", "maxLength": 120 },
+        "remixPhotoUrl": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "number" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "recipientUserId", "remixerId", "originalPhotoId", "remixPhotoId", "createdAt"]
+    },
+    "Badge": {
+      "title": "Badge",
+      "description": "Insígnia de recompensa ou conquista visual da comunidade UPMM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 80 },
+        "icon": { "type": "string", "maxLength": 60 },
+        "description": { "type": "string", "maxLength": 300 },
+        "category": { "type": "string", "enum": ["reputation", "creation", "battle", "territory", "special"] },
+        "secret": { "type": "boolean" },
+        "unlockCriteria": { "type": "string", "maxLength": 200 },
+        "rewardResponsa": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name", "icon", "description"]
+    },
+    "BrandedChallenge": {
+      "title": "BrandedChallenge",
+      "description": "Desafio temático patrocinado por marcas parceiras com prêmios comunitários garantidos",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "sponsor": { "type": "object" },
+        "prizeDescription": { "type": "string", "maxLength": 300 },
+        "rewardVibePoints": { "type": "number" },
+        "bannerUrl": { "type": "string", "maxLength": 2048 },
+        "active": { "type": "boolean" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "endDate": { "type": "string", "maxLength": 30 },
+        "submissionsCount": { "type": "number" },
+        "featuredNeighborhood": { "type": "string", "maxLength": 100 },
+        "rules": { "type": "array" },
+        "tags": { "type": "array" }
+      },
+      "required": ["id", "title", "description", "sponsor", "prizeDescription", "rewardVibePoints", "bannerUrl", "active", "startDate", "endDate", "submissionsCount"]
+    },
+    "BrandedAssetPack": {
+      "title": "BrandedAssetPack",
+      "description": "Pack de stickers e texturas patrocinadas por marcas parceiras para uso no estúdio",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "sponsor": { "type": "object" },
+        "active": { "type": "boolean" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "endDate": { "type": "string", "maxLength": 30 },
+        "items": { "type": "array" },
+        "usageCount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "title", "sponsor", "active", "startDate", "endDate", "items", "usageCount"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Coleção de perfis de usuários"
+    },
+    "/badges/{badgeId}": {
+      "schema": "Badge",
+      "description": "Coleção de insígnias e recompensas da comunidade"
+    },
+    "/photos/{photoId}": {
+      "schema": "Photo",
+      "description": "Coleção de fotos originais e remixes"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comentários em fotos e murais"
+    },
+    "/graffitiSpots/{spotId}": {
+      "schema": "GraffitiSpot",
+      "description": "Muros mapeados em Palmas"
+    },
+    "/challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "Desafios semanais"
+    },
+    "/brandedChallenges/{challengeId}": {
+      "schema": "BrandedChallenge",
+      "description": "Desafios patrocinados por marcas parceiras"
+    },
+    "/brandedPacks/{packId}": {
+      "schema": "BrandedAssetPack",
+      "description": "Packs de stickers patrocinados para o estúdio"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "RemixNotification",
+      "description": "Notificações de remixes de fotos originais"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Remix UPMM Perifa Lab: Remix Cultural",
+  "description": "O UPMM Periferia Remix é uma plataforma web colaborativa criada para transformar registros fotográficos da periferia em intervenções de arte digital.\n\nO app funciona como um estúdio criativo direto no navegador: fotógrafos e moradores sobem imagens do cotidiano, texturas e arquitetura urbana, enquanto artistas visuais utilizam um canvas interativo para aplicar stickers, grafites, tipografias de rua e animações sobre essas fotos. Ao publicar, o sistema preserva automaticamente o crédito do fotógrafo original e do artista do remix, alimentando uma galeria comunitária focada na valorização da identidade e da estética periférica.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" fill="#141311" rx="100"/>
+  <circle cx="256" cy="256" r="210" fill="#1C1B19" stroke="#FFB800" stroke-width="12"/>
+  <path d="M160 360 L256 140 L352 360 L290 360 L256 280 L222 360 Z" fill="#FFB800"/>
+  <path d="M120 200 C 160 120, 352 120, 392 200 C 352 280, 160 280, 120 200 Z" fill="none" stroke="#FF5722" stroke-width="14" opacity="0.85"/>
+  <circle cx="256" cy="200" r="32" fill="#00E5FF"/>
+  <text x="256" y="440" font-family="'Bebas Neue', Montserrat, sans-serif" font-size="42" font-weight="900" fill="#EDE8E1" text-anchor="middle" letter-spacing="4">UPMM PERIFA</text>
+</svg>
