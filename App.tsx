@@ -94,6 +94,7 @@ import {
 } from './firestoreSync';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { getSupabaseCurrentUser, signOutSupabase, getSupabaseClient } from './supabase';
 
 // Interface para locais descobertos via Gemini + Google Maps Grounding
 interface DiscoveredSpot {
@@ -339,9 +340,43 @@ const App: React.FC = () => {
       }
     });
 
+    // 4. Listen to Supabase Auth session if configured
+    const sb = getSupabaseClient();
+    let sbSubscription: { unsubscribe: () => void } | null = null;
+    if (sb) {
+      getSupabaseCurrentUser().then(sbUser => {
+        if (sbUser) {
+          setUsers(prevUsers => {
+            const matched = prevUsers.find(u => u.id === sbUser.id || (sbUser.email && u.email === sbUser.email));
+            if (matched) {
+              setCurrentUser(matched);
+            } else {
+              setCurrentUser(sbUser);
+              return [...prevUsers, sbUser];
+            }
+            return prevUsers;
+          });
+        }
+      }).catch(() => {});
+
+      const { data } = sb.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const user = await getSupabaseCurrentUser();
+          if (user) {
+            setCurrentUser(user);
+            try { localStorage.setItem('upmm_current_user_id', user.id); } catch {}
+          }
+        }
+      });
+      sbSubscription = data?.subscription || null;
+    }
+
     return () => {
       unsubscribeFirestore();
       unsubscribeAuth();
+      if (sbSubscription) {
+        sbSubscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -373,6 +408,11 @@ const App: React.FC = () => {
       } catch (e) {
         console.warn('Erro ao deslogar do Firebase Auth:', e);
       }
+    }
+    try {
+      await signOutSupabase();
+    } catch (e) {
+      console.warn('Erro ao deslogar do Supabase:', e);
     }
   };
 

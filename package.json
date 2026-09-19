@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.40.0",
+    "@supabase/supabase-js": "^2.116.0",
     "@types/react-window": "^2.0.0",
     "@vis.gl/react-google-maps": "^1.10.0",
     "canvas-confetti": "^1.9.4",

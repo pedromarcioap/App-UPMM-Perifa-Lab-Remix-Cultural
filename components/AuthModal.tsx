@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { 
   X, Sparkles, MapPin, Camera, Shield, Check, Lock, Eye, EyeOff, 
   Upload, ArrowRight, AlertCircle, LogIn, UserPlus, Image as ImageIcon,
-  CheckCircle2
+  CheckCircle2, Database
 } from 'lucide-react';
 import { User, UserLevel } from '../types';
 import { PALMAS_NEIGHBORHOODS } from '../constants';
@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { persistUser } from '../firestoreSync';
+import { signUpWithSupabase, signInWithSupabase, isSupabaseConfigured } from '../supabase';
 
 interface AuthModalProps {
   users: User[];
@@ -51,6 +52,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isSupabaseLoading, setIsSupabaseLoading] = useState(false);
+  const [syncWithSupabase, setSyncWithSupabase] = useState(true);
 
   // Registration form state
   const [name, setName] = useState('');
@@ -166,6 +169,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onSelectUser(foundUser.id);
       onClose();
     }, 400);
+  };
+
+  // Handle Login with Real Supabase Auth (Email + Password)
+  const handleSupabaseLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSupabaseLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const term = loginIdentifier.trim().toLowerCase();
+    if (!term) {
+      setErrorMsg('Informe seu e-mail cadastrado no Supabase.');
+      setIsSupabaseLoading(false);
+      return;
+    }
+    if (!loginPassword) {
+      setErrorMsg('Informe sua senha cadastrada no Supabase.');
+      setIsSupabaseLoading(false);
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      setErrorMsg('Supabase ainda não configurado no .env (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY). Você pode entrar pelo login padrão com usuário/senha ou cadastrar um novo usuário.');
+      setIsSupabaseLoading(false);
+      return;
+    }
+
+    try {
+      const { user: sbUser, error: sbError } = await signInWithSupabase(term, loginPassword);
+      if (sbError || !sbUser) {
+        setErrorMsg(sbError || 'Credenciais inválidas no Supabase.');
+        setIsSupabaseLoading(false);
+        return;
+      }
+
+      // Persistir dados do usuário também no ecossistema local
+      try {
+        await persistUser(sbUser);
+      } catch {}
+
+      setSuccessMsg(`Conectado com sucesso via Supabase: @${sbUser.name}!`);
+      setTimeout(() => {
+        onRegisterUser(sbUser);
+        onClose();
+      }, 400);
+    } catch (err: any) {
+      setErrorMsg(`Erro de autenticação Supabase: ${err?.message || 'Falha ao conectar'}`);
+    } finally {
+      setIsSupabaseLoading(false);
+    }
   };
 
   // Handle Google Login with Real Firebase Auth
@@ -317,6 +370,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       emailVerified: false
     };
 
+    // 0. Cadastrar e sincronizar com Supabase Auth & Banco Relacional PostgreSQL
+    let supabaseRegistered = false;
+    if (syncWithSupabase && isSupabaseConfigured()) {
+      try {
+        const sbResult = await signUpWithSupabase({
+          email: trimmedEmail,
+          password: regPassword.trim() || '123456',
+          name: name.trim(),
+          username: cleanUsername,
+          neighborhood: neighborhood,
+          avatar: finalAvatar,
+          bio: candidateUser.bio,
+          instagram: candidateUser.instagram
+        });
+
+        if (sbResult.user) {
+          candidateUser.id = sbResult.user.id;
+          supabaseRegistered = true;
+        }
+      } catch (sbErr) {
+        console.warn('Aviso ao registrar usuário no Supabase:', sbErr);
+      }
+    }
+
     // 1. Persistir IMEDIATAMENTE no Firestore para garantir inclusão no banco de users
     try {
       await persistUser(candidateUser);
@@ -342,7 +419,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEnteredCode('');
     setResendCooldown(60);
     setIsVerifyingEmail(true);
-    setSuccessMsg(`Perfil gravado no banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`);
+    setSuccessMsg(
+      supabaseRegistered 
+        ? `Perfil registrado no Supabase e banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
+        : `Perfil gravado no banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
+    );
   };
 
   // Handle Confirm Verification Code
@@ -479,12 +560,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {activeTab === 'login' ? (
             <div className="space-y-4">
               
+              {/* SUPABASE STATUS BANNER */}
+              <div className="flex items-center justify-between p-3 bg-[#1C1B19] border border-[#3E3A35] rounded-2xl text-[10px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#3ECF8E]/15 text-[#3ECF8E] flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M21.362 9.354H12V.396a.396.396 0 0 0-.716-.233L.203 13.916a.396.396 0 0 0 .319.638H12v8.958a.396.396 0 0 0 .716.233l11.081-13.753a.396.396 0 0 0-.319-.638z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="font-black uppercase tracking-wider text-zinc-200 block">Supabase Auth</span>
+                    <span className="text-zinc-500 font-medium">Banco Relacional PostgreSQL</span>
+                  </div>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full font-black uppercase text-[8.5px] border ${
+                  isSupabaseConfigured()
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {isSupabaseConfigured() ? '● Conectado' : 'Aguardando .env'}
+                </span>
+              </div>
+
               {/* GOOGLE SIGN-IN BUTTON */}
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={isGoogleLoading}
-                className="w-full py-3.5 px-4 bg-[#242220] hover:bg-[#2D2A26] text-white font-bold text-xs uppercase tracking-wider rounded-2xl border border-[#3E3A35] hover:border-[#FFB800] shadow-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.01] cursor-pointer"
+                className="w-full py-3 px-4 bg-[#242220] hover:bg-[#2D2A26] text-white font-bold text-xs uppercase tracking-wider rounded-2xl border border-[#3E3A35] hover:border-[#FFB800] shadow-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.01] cursor-pointer"
               >
                 {/* Official Google G Logo SVG */}
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -514,7 +617,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="relative flex py-1 items-center">
                 <div className="flex-grow border-t border-[#3E3A35]"></div>
                 <span className="flex-shrink mx-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  ou com usuário e senha
+                  ou com e-mail e senha
                 </span>
                 <div className="flex-grow border-t border-[#3E3A35]"></div>
               </div>
@@ -523,12 +626,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <form onSubmit={handleLogin} className="space-y-3.5">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">
-                    Usuário, E-mail ou Vulgo
+                    E-mail, Usuário ou Vulgo
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: calebeart, djcerrado ou seu e-mail"
+                    placeholder="Ex: seuemail@exemplo.com ou calebeart"
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full p-3.5 bg-[#242220] border border-[#3E3A35] rounded-2xl text-xs font-bold text-white placeholder-zinc-500 focus:ring-2 focus:ring-[#FFB800] focus:border-[#FFB800] outline-none transition"
@@ -541,7 +644,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       Senha
                     </label>
                     <span className="text-[10px] text-zinc-500">
-                      (Dica: teste com <code className="bg-[#242220] px-1 py-0.5 rounded font-mono font-bold text-[#FFB800]">123</code>)
+                      (Dica: teste local com <code className="bg-[#242220] px-1 py-0.5 rounded font-mono font-bold text-[#FFB800]">123</code>)
                     </span>
                   </div>
                   <div className="relative">
@@ -563,13 +666,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] font-black text-xs uppercase tracking-wider py-4 rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <LogIn size={15} />
-                  <span>Entrar na Minha Conta</span>
-                </button>
+                {/* BOTÕES DE LOGIN: SUPABASE & PADRÃO */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSupabaseLogin()}
+                    disabled={isSupabaseLoading}
+                    className="w-full bg-[#17382B] hover:bg-[#1E4A39] text-[#3ECF8E] border border-[#3ECF8E]/40 font-black text-xs uppercase tracking-wider py-3.5 rounded-2xl shadow-md transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4 text-[#3ECF8E] shrink-0" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M21.362 9.354H12V.396a.396.396 0 0 0-.716-.233L.203 13.916a.396.396 0 0 0 .319.638H12v8.958a.396.396 0 0 0 .716.233l11.081-13.753a.396.396 0 0 0-.319-.638z"/>
+                    </svg>
+                    <span>{isSupabaseLoading ? 'Autenticando no Supabase...' : 'Entrar com Supabase Auth'}</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] font-black text-xs uppercase tracking-wider py-3.5 rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <LogIn size={15} />
+                    <span>Entrar no Modo Padrão</span>
+                  </button>
+                </div>
               </form>
 
               <div className="pt-2 text-center">
@@ -910,6 +1028,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onChange={(e) => setInstagram(e.target.value)}
                   className="w-full p-3 bg-[#242220] border border-[#3E3A35] rounded-2xl text-xs font-bold text-white placeholder-zinc-500 focus:ring-2 focus:ring-[#FFB800] focus:border-[#FFB800] outline-none"
                 />
+              </div>
+
+              {/* Supabase Sync Option Card */}
+              <div className="p-3 bg-[#1C1B19] rounded-2xl border border-[#3E3A35] flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#3ECF8E]/15 text-[#3ECF8E] flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M21.362 9.354H12V.396a.396.396 0 0 0-.716-.233L.203 13.916a.396.396 0 0 0 .319.638H12v8.958a.396.396 0 0 0 .716.233l11.081-13.753a.396.396 0 0 0-.319-.638z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] font-black uppercase tracking-wider text-white block">
+                      Criar no Supabase (Auth + PostgreSQL)
+                    </span>
+                    <span className="text-[9px] text-zinc-400 block">
+                      {isSupabaseConfigured() ? 'Sincronização em nuvem ativa' : 'Pendente de credenciais no .env'}
+                    </span>
+                  </div>
+                </div>
+                <label className="relative flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={syncWithSupabase}
+                    onChange={(e) => setSyncWithSupabase(e.target.checked)}
+                    className="w-4 h-4 accent-[#3ECF8E] cursor-pointer rounded"
+                  />
+                </label>
               </div>
 
               <div className="pt-2">
