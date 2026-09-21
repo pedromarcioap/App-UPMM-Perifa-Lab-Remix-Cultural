@@ -114,7 +114,7 @@ export const BattleRanking: React.FC<BattleRankingProps> = ({
         p.title.toLowerCase().includes(q) ||
         p.authorName.toLowerCase().includes(q) ||
         (p.location?.neighborhood && p.location.neighborhood.toLowerCase().includes(q)) ||
-        p.tags.some(t => t.toLowerCase().includes(q))
+        (p.tags || []).some(t => t.toLowerCase().includes(q))
       );
     }
 

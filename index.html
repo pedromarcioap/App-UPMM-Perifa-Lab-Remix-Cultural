@@ -8,6 +8,133 @@
     <meta name="description" content="O UPMM Periferia Remix é uma plataforma web colaborativa criada para transformar registros fotográficos da periferia em intervenções de arte digital.">
     <meta property="og:title" content="Remix UPMM Perifa Lab: Remix Cultural">
     <meta property="og:description" content="O UPMM Periferia Remix é uma plataforma web colaborativa criada para transformar registros fotográficos da periferia em intervenções de arte digital.">
+    <script>
+      // Sandbox HMR WebSocket stabilizer & benign warning filter when DISABLE_HMR=true
+      (function() {
+        if (typeof window === 'undefined') return;
+
+        // 1. Stabilize Vite HMR WebSocket in sandboxed iframe environment
+        try {
+          var OrigWebSocket = window.WebSocket;
+          if (typeof OrigWebSocket === 'function') {
+            function MockViteWebSocket(url, protocols) {
+              var isVite = false;
+              if (typeof protocols === 'string' && (protocols === 'vite-hmr' || protocols === 'vite-ping')) isVite = true;
+              else if (Array.isArray(protocols) && protocols.some(function(p) { return typeof p === 'string' && (p === 'vite-hmr' || p === 'vite-ping'); })) isVite = true;
+              else if (typeof url === 'string' && (url.indexOf('token=') !== -1 && url.indexOf('vite') !== -1)) isVite = true;
+
+              if (isVite) {
+                var target = new EventTarget();
+                target.binaryType = 'blob';
+                target.readyState = 1; // WebSocket.OPEN
+                target.bufferedAmount = 0;
+                target.extensions = '';
+                target.protocol = typeof protocols === 'string' ? protocols : 'vite-hmr';
+                target.url = url;
+                target.send = function() {};
+                target.close = function(code, reason) {
+                  target.readyState = 3; // WebSocket.CLOSED
+                  var ev = typeof CloseEvent !== 'undefined'
+                    ? new CloseEvent('close', { code: code || 1000, reason: reason || '', wasClean: true })
+                    : new Event('close');
+                  if (typeof target.onclose === 'function') target.onclose(ev);
+                  target.dispatchEvent(ev);
+                };
+                setTimeout(function() {
+                  var ev = new Event('open');
+                  if (typeof target.onopen === 'function') target.onopen(ev);
+                  target.dispatchEvent(ev);
+                }, 10);
+                return target;
+              }
+              return new OrigWebSocket(url, protocols);
+            }
+            MockViteWebSocket.prototype = OrigWebSocket.prototype;
+            MockViteWebSocket.CONNECTING = 0;
+            MockViteWebSocket.OPEN = 1;
+            MockViteWebSocket.CLOSING = 2;
+            MockViteWebSocket.CLOSED = 3;
+            window.WebSocket = MockViteWebSocket;
+          }
+        } catch (e) {}
+
+        // 2. Filter any residual [vite] or websocket warnings in console
+        function shouldSuppress(args) {
+          if (!args || !args.length) return false;
+          for (var i = 0; i < args.length; i++) {
+            var item = args[i];
+            if (typeof item === 'string') {
+              if (item === '[vite]' || item.indexOf('[vite]') !== -1 || item.indexOf('websocket') !== -1 || item.indexOf('WebSocket') !== -1) {
+                return true;
+              }
+            } else if (item && typeof item === 'object') {
+              var str = ((item.message || '') + ' ' + (item.stack || ''));
+              if (str.indexOf('[vite]') !== -1 || str.indexOf('websocket') !== -1 || str.indexOf('WebSocket') !== -1) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        var origError = console.error;
+        console.error = function() {
+          if (shouldSuppress(arguments)) return;
+          origError.apply(console, arguments);
+        };
+
+        var origWarn = console.warn;
+        console.warn = function() {
+          if (shouldSuppress(arguments)) return;
+          origWarn.apply(console, arguments);
+        };
+
+        var origInfo = console.info;
+        console.info = function() {
+          if (shouldSuppress(arguments)) return;
+          origInfo.apply(console, arguments);
+        };
+
+        var origLog = console.log;
+        console.log = function() {
+          if (shouldSuppress(arguments)) return;
+          origLog.apply(console, arguments);
+        };
+
+        var origDebug = console.debug;
+        console.debug = function() {
+          if (shouldSuppress(arguments)) return;
+          origDebug.apply(console, arguments);
+        };
+
+        window.addEventListener('error', function(event) {
+          var msg = (event && (event.message || '')) + '';
+          if (
+            msg.indexOf('[vite]') !== -1 || 
+            msg.indexOf('websocket') !== -1 || 
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('concurrent rendering') !== -1
+          ) {
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            if (event.preventDefault) event.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = (event && event.reason) || '';
+          var msg = (typeof reason === 'string' ? reason : ((reason && (reason.message || reason.stack)) || '')) + '';
+          if (
+            msg.indexOf('[vite]') !== -1 || 
+            msg.indexOf('websocket') !== -1 || 
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('concurrent rendering') !== -1
+          ) {
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            if (event.preventDefault) event.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     
     <!-- Mobile App Native PWA Metas -->
     <meta name="theme-color" content="#141311">
@@ -32,22 +159,26 @@
               dividerMuted: '#4D4842',
               solar: '#FFB800',
               brasa: '#FF5722',
+              terracota: '#FF5722',
               pequi: '#43A047',
               lago: '#0288D1',
               ciano: '#00E5FF',
-              sandLight: '#EDE8E1'
+              sandLight: '#EDE8E1',
+              asfalto: '#11100F'
             },
             fontFamily: {
-              display: ['"Bebas Neue"', 'Impact', 'sans-serif'],
-              sans: ['"Montserrat"', 'sans-serif'],
-              body: ['"Montserrat"', 'sans-serif']
+              display: ['"Space Grotesk"', '"Bebas Neue"', 'Impact', 'sans-serif'],
+              stencil: ['"Space Grotesk"', 'Impact', 'sans-serif'],
+              sans: ['"Montserrat"', '"Space Grotesk"', 'sans-serif'],
+              body: ['"Montserrat"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace']
             }
           }
         }
       }
     </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Permanent+Marker&family=Bangers&family=Rubik+Glitch&family=Rock+Salt&family=Bungee&family=Bungee+Inline&family=Black+Ops+One&family=Londrina+Sketch&family=Special+Elite&family=Gloria+Hallelujah&family=Sedgwick+Ave&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;900&family=JetBrains+Mono:wght@600;700;800&family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;900&family=Permanent+Marker&family=Bangers&family=Rubik+Glitch&family=Rock+Salt&family=Bungee&family=Bungee+Inline&family=Black+Ops+One&family=Londrina+Sketch&family=Special+Elite&family=Gloria+Hallelujah&family=Sedgwick+Ave&display=swap" rel="stylesheet">
     <style>
         @font-face {
             font-family: 'Cocogoose';

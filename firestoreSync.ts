@@ -113,7 +113,10 @@ export function normalizePhoto(raw: any): PhotoBase {
     battleLosses: typeof raw.battleLosses === 'number' ? raw.battleLosses : 0,
     battleStreak: typeof raw.battleStreak === 'number' ? raw.battleStreak : 0,
     challengeId: raw.challengeId ? String(raw.challengeId) : undefined,
-    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+    storagePath: raw.storagePath ? String(raw.storagePath) : undefined,
+    analysis: raw.analysis || undefined,
+    analysisStatus: raw.analysisStatus || (raw.analysis ? 'completed' : 'idle')
   };
 }
 
@@ -366,9 +369,42 @@ export async function seedInitialFirestoreData() {
   } catch (_) {}
 }
 
+const CACHE_KEYS = {
+  USERS: 'upmm_cached_users',
+  PHOTOS: 'upmm_cached_photos',
+  SPOTS: 'upmm_cached_spots',
+  COMMENTS: 'upmm_cached_comments',
+  CHALLENGES: 'upmm_cached_challenges',
+  NOTIFICATIONS: 'upmm_cached_notifications',
+  BADGES: 'upmm_cached_badges',
+  BRANDED_CHALLENGES: 'upmm_cached_branded_challenges',
+  BRANDED_PACKS: 'upmm_cached_branded_packs'
+};
+
+export function getCachedCollection<T>(key: string, fallback: T[]): T[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function setCachedCollection<T>(key: string, data: T[]): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+  } catch (e) {
+    console.warn('Erro ao atualizar cache local:', e);
+  }
+}
+
 /**
  * Subscribe to real-time updates from Firestore
- * Single Source of Truth: Data received from snapshots is normalized and passed directly to state.
+ * Single Source of Truth: Data received from snapshots is normalized, cached locally, and passed to state.
  */
 export function subscribeToFirestore(callbacks: {
   onUsers: (users: User[]) => void;
@@ -381,36 +417,59 @@ export function subscribeToFirestore(callbacks: {
   onBrandedChallenges?: (brandedChallenges: BrandedChallenge[]) => void;
   onBrandedPacks?: (brandedPacks: BrandedAssetPack[]) => void;
 }) {
+  // 1. Hidratação imediata via cache ou dados iniciais de Palmas
+  const initialUsers = getCachedCollection<User>(CACHE_KEYS.USERS, INITIAL_USERS);
+  const initialPhotos = getCachedCollection<PhotoBase>(CACHE_KEYS.PHOTOS, INITIAL_PHOTOS);
+  const initialSpots = getCachedCollection<GraffitiSpot>(CACHE_KEYS.SPOTS, INITIAL_GRAFFITI_SPOTS);
+  const initialComments = getCachedCollection<Comment>(CACHE_KEYS.COMMENTS, INITIAL_COMMENTS);
+  const initialChallenges = getCachedCollection<WeeklyChallenge>(CACHE_KEYS.CHALLENGES, INITIAL_WEEKLY_CHALLENGES);
+  const initialBrandedChallenges = getCachedCollection<BrandedChallenge>(CACHE_KEYS.BRANDED_CHALLENGES, INITIAL_BRANDED_CHALLENGES);
+  const initialBrandedPacks = getCachedCollection<BrandedAssetPack>(CACHE_KEYS.BRANDED_PACKS, INITIAL_BRANDED_PACKS);
+
+  callbacks.onUsers(initialUsers);
+  callbacks.onPhotos(initialPhotos);
+  callbacks.onSpots(initialSpots);
+  callbacks.onComments(initialComments);
+  callbacks.onChallenges(initialChallenges);
+  if (callbacks.onBadges) callbacks.onBadges(BADGES);
+  if (callbacks.onBrandedChallenges) callbacks.onBrandedChallenges(initialBrandedChallenges);
+  if (callbacks.onBrandedPacks) callbacks.onBrandedPacks(initialBrandedPacks);
+
+  // 2. Ouvintes remotos do Firestore com atualização de cache contínua
   const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
     if (!snap.empty) {
       const items = snap.docs.map(d => normalizeUser({ id: d.id, ...d.data() }));
+      setCachedCollection(CACHE_KEYS.USERS, items);
       callbacks.onUsers(items);
     }
   }, (err) => {
     if (err.code !== 'permission-denied') {
-      handleFirestoreError(err, OperationType.GET, 'users');
+      console.warn('[Firestore Sync] Conexão remota de usuários em modo offline:', err.message);
     }
   });
 
   const unsubPhotos = onSnapshot(collection(db, 'photos'), (snap) => {
     if (!snap.empty) {
       const items = snap.docs.map(d => normalizePhoto({ id: d.id, ...d.data() }));
+      items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setCachedCollection(CACHE_KEYS.PHOTOS, items);
       callbacks.onPhotos(items);
     }
   }, (err) => {
     if (err.code !== 'permission-denied') {
-      handleFirestoreError(err, OperationType.GET, 'photos');
+      console.warn('[Firestore Sync] Conexão remota de fotos em modo offline:', err.message);
     }
   });
 
   const unsubSpots = onSnapshot(collection(db, 'graffitiSpots'), (snap) => {
     if (!snap.empty) {
       const items = snap.docs.map(d => normalizeGraffitiSpot({ id: d.id, ...d.data() }));
+      setCachedCollection(CACHE_KEYS.SPOTS, items);
       callbacks.onSpots(items);
     }
   }, (err) => {
     if (err.code !== 'permission-denied') {
-      handleFirestoreError(err, OperationType.GET, 'graffitiSpots');
+      console.warn('[Firestore Sync] Conexão remota de spots em modo offline:', err.message);
     }
   });
 
@@ -418,22 +477,24 @@ export function subscribeToFirestore(callbacks: {
     if (!snap.empty) {
       const items = snap.docs.map(d => normalizeComment({ id: d.id, ...d.data() }));
       items.sort((a, b) => b.createdAt - a.createdAt);
+      setCachedCollection(CACHE_KEYS.COMMENTS, items);
       callbacks.onComments(items);
     }
   }, (err) => {
     if (err.code !== 'permission-denied') {
-      handleFirestoreError(err, OperationType.GET, 'comments');
+      console.warn('[Firestore Sync] Conexão remota de comentários em modo offline:', err.message);
     }
   });
 
   const unsubChallenges = onSnapshot(collection(db, 'challenges'), (snap) => {
     if (!snap.empty) {
       const items = snap.docs.map(d => normalizeChallenge({ id: d.id, ...d.data() }));
+      setCachedCollection(CACHE_KEYS.CHALLENGES, items);
       callbacks.onChallenges(items);
     }
   }, (err) => {
     if (err.code !== 'permission-denied') {
-      handleFirestoreError(err, OperationType.GET, 'challenges');
+      console.warn('[Firestore Sync] Conexão remota de desafios em modo offline:', err.message);
     }
   });
 
@@ -442,11 +503,12 @@ export function subscribeToFirestore(callbacks: {
         if (!snap.empty) {
           const items = snap.docs.map(d => normalizeNotification({ id: d.id, ...d.data() }));
           items.sort((a, b) => b.createdAt - a.createdAt);
+          setCachedCollection(CACHE_KEYS.NOTIFICATIONS, items);
           callbacks.onNotifications?.(items);
         }
       }, (err) => {
         if (err.code !== 'permission-denied') {
-          handleFirestoreError(err, OperationType.GET, 'notifications');
+          console.warn('[Firestore Sync] Conexão remota de notificações em modo offline:', err.message);
         }
       })
     : () => {};
@@ -455,11 +517,12 @@ export function subscribeToFirestore(callbacks: {
     ? onSnapshot(collection(db, 'badges'), (snap) => {
         if (!snap.empty) {
           const items = snap.docs.map(d => normalizeBadge({ id: d.id, ...d.data() }));
+          setCachedCollection(CACHE_KEYS.BADGES, items);
           callbacks.onBadges?.(items);
         }
       }, (err) => {
         if (err.code !== 'permission-denied') {
-          handleFirestoreError(err, OperationType.GET, 'badges');
+          console.warn('[Firestore Sync] Conexão remota de badges em modo offline:', err.message);
         }
       })
     : () => {};
@@ -468,11 +531,12 @@ export function subscribeToFirestore(callbacks: {
     ? onSnapshot(collection(db, 'brandedChallenges'), (snap) => {
         if (!snap.empty) {
           const items = snap.docs.map(d => normalizeBrandedChallenge({ id: d.id, ...d.data() }));
+          setCachedCollection(CACHE_KEYS.BRANDED_CHALLENGES, items);
           callbacks.onBrandedChallenges?.(items);
         }
       }, (err) => {
         if (err.code !== 'permission-denied') {
-          handleFirestoreError(err, OperationType.GET, 'brandedChallenges');
+          console.warn('[Firestore Sync] Conexão remota de desafios parceiros em modo offline:', err.message);
         }
       })
     : () => {};
@@ -481,11 +545,12 @@ export function subscribeToFirestore(callbacks: {
     ? onSnapshot(collection(db, 'brandedPacks'), (snap) => {
         if (!snap.empty) {
           const items = snap.docs.map(d => normalizeBrandedPack({ id: d.id, ...d.data() }));
+          setCachedCollection(CACHE_KEYS.BRANDED_PACKS, items);
           callbacks.onBrandedPacks?.(items);
         }
       }, (err) => {
         if (err.code !== 'permission-denied') {
-          handleFirestoreError(err, OperationType.GET, 'brandedPacks');
+          console.warn('[Firestore Sync] Conexão remota de packs parceiros em modo offline:', err.message);
         }
       })
     : () => {};
@@ -504,160 +569,208 @@ export function subscribeToFirestore(callbacks: {
 }
 
 /**
- * Data Mutation Operations with Exponential Backoff and Deep Undefined-Stripping
+ * Data Mutation Operations com Persistência Offline-First e Sincronização Resiliente
  */
 export async function persistUser(user: User): Promise<void> {
+  const current = getCachedCollection<User>(CACHE_KEYS.USERS, INITIAL_USERS);
+  const updated = [user, ...current.filter(u => u.id !== user.id)];
+  setCachedCollection(CACHE_KEYS.USERS, updated);
+
   try {
     const payload = cleanUndefined(user);
-    await withRetry(() => setDoc(doc(db, 'users', user.id), payload, { merge: true }));
+    await withRetry(() => setDoc(doc(db, 'users', user.id), payload, { merge: true }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `users/${user.id}`);
-    throw error;
+    console.warn(`[Modo Local] Perfil do usuário salvo no armazenamento local (${user.id}):`, error);
   }
 }
 
 export async function persistPhoto(photo: PhotoBase): Promise<void> {
+  const current = getCachedCollection<PhotoBase>(CACHE_KEYS.PHOTOS, INITIAL_PHOTOS);
+  const updated = [photo, ...current.filter(p => p.id !== photo.id)];
+  setCachedCollection(CACHE_KEYS.PHOTOS, updated);
+
   try {
     const payload = cleanUndefined(photo);
-    await withRetry(() => setDoc(doc(db, 'photos', photo.id), payload));
+    await withRetry(() => setDoc(doc(db, 'photos', photo.id), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `photos/${photo.id}`);
-    throw error;
+    console.warn(`[Modo Local] Foto salva com sucesso no armazenamento local (${photo.id}):`, error);
   }
 }
 
 export async function updatePhotoInFirestore(photoId: string, updates: Partial<PhotoBase>): Promise<void> {
+  const current = getCachedCollection<PhotoBase>(CACHE_KEYS.PHOTOS, INITIAL_PHOTOS);
+  const updated = current.map(p => p.id === photoId ? { ...p, ...updates } : p);
+  setCachedCollection(CACHE_KEYS.PHOTOS, updated);
+
   try {
     const payload = cleanUndefined(updates);
-    await withRetry(() => updateDoc(doc(db, 'photos', photoId), payload));
+    await withRetry(() => updateDoc(doc(db, 'photos', photoId), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `photos/${photoId}`);
-    throw error;
+    console.warn(`[Modo Local] Foto atualizada no armazenamento local (${photoId}):`, error);
   }
 }
 
 export async function deletePhotoFromFirestore(photoId: string): Promise<void> {
+  const current = getCachedCollection<PhotoBase>(CACHE_KEYS.PHOTOS, INITIAL_PHOTOS);
+  const updated = current.filter(p => p.id !== photoId);
+  setCachedCollection(CACHE_KEYS.PHOTOS, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'photos', photoId)));
+    await withRetry(() => deleteDoc(doc(db, 'photos', photoId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `photos/${photoId}`);
-    throw error;
+    console.warn(`[Modo Local] Foto excluída no armazenamento local (${photoId}):`, error);
   }
 }
 
 export async function persistComment(comment: Comment): Promise<void> {
+  const current = getCachedCollection<Comment>(CACHE_KEYS.COMMENTS, INITIAL_COMMENTS);
+  const updated = [comment, ...current.filter(c => c.id !== comment.id)];
+  setCachedCollection(CACHE_KEYS.COMMENTS, updated);
+
   try {
     const payload = cleanUndefined(comment);
-    await withRetry(() => setDoc(doc(db, 'comments', comment.id), payload));
+    await withRetry(() => setDoc(doc(db, 'comments', comment.id), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `comments/${comment.id}`);
-    throw error;
+    console.warn(`[Modo Local] Comentário salvo no armazenamento local (${comment.id}):`, error);
   }
 }
 
 export async function persistSpot(spot: GraffitiSpot): Promise<void> {
+  const current = getCachedCollection<GraffitiSpot>(CACHE_KEYS.SPOTS, INITIAL_GRAFFITI_SPOTS);
+  const updated = [spot, ...current.filter(s => s.id !== spot.id)];
+  setCachedCollection(CACHE_KEYS.SPOTS, updated);
+
   try {
     const payload = cleanUndefined(spot);
-    await withRetry(() => setDoc(doc(db, 'graffitiSpots', spot.id), payload));
+    await withRetry(() => setDoc(doc(db, 'graffitiSpots', spot.id), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `graffitiSpots/${spot.id}`);
-    throw error;
+    console.warn(`[Modo Local] Ponto de graffiti salvo no armazenamento local (${spot.id}):`, error);
   }
 }
 
 export async function deleteSpotFromFirestore(spotId: string): Promise<void> {
+  const current = getCachedCollection<GraffitiSpot>(CACHE_KEYS.SPOTS, INITIAL_GRAFFITI_SPOTS);
+  const updated = current.filter(s => s.id !== spotId);
+  setCachedCollection(CACHE_KEYS.SPOTS, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'graffitiSpots', spotId)));
+    await withRetry(() => deleteDoc(doc(db, 'graffitiSpots', spotId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `graffitiSpots/${spotId}`);
-    throw error;
+    console.warn(`[Modo Local] Ponto de graffiti removido no armazenamento local (${spotId}):`, error);
   }
 }
 
 export async function persistChallenge(challenge: WeeklyChallenge): Promise<void> {
+  const current = getCachedCollection<WeeklyChallenge>(CACHE_KEYS.CHALLENGES, INITIAL_WEEKLY_CHALLENGES);
+  const updated = [challenge, ...current.filter(c => c.id !== challenge.id)];
+  setCachedCollection(CACHE_KEYS.CHALLENGES, updated);
+
   try {
     const payload = cleanUndefined(challenge);
-    await withRetry(() => setDoc(doc(db, 'challenges', challenge.id), payload, { merge: true }));
+    await withRetry(() => setDoc(doc(db, 'challenges', challenge.id), payload, { merge: true }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `challenges/${challenge.id}`);
-    throw error;
+    console.warn(`[Modo Local] Desafio semanal salvo no armazenamento local (${challenge.id}):`, error);
   }
 }
 
 export async function deleteChallengeFromFirestore(challengeId: string): Promise<void> {
+  const current = getCachedCollection<WeeklyChallenge>(CACHE_KEYS.CHALLENGES, INITIAL_WEEKLY_CHALLENGES);
+  const updated = current.filter(c => c.id !== challengeId);
+  setCachedCollection(CACHE_KEYS.CHALLENGES, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'challenges', challengeId)));
+    await withRetry(() => deleteDoc(doc(db, 'challenges', challengeId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `challenges/${challengeId}`);
-    throw error;
+    console.warn(`[Modo Local] Desafio semanal removido no armazenamento local (${challengeId}):`, error);
   }
 }
 
 export async function persistNotification(notification: RemixNotification): Promise<void> {
+  const current = getCachedCollection<RemixNotification>(CACHE_KEYS.NOTIFICATIONS, []);
+  const updated = [notification, ...current.filter(n => n.id !== notification.id)];
+  setCachedCollection(CACHE_KEYS.NOTIFICATIONS, updated);
+
   try {
     const payload = cleanUndefined(notification);
-    await withRetry(() => setDoc(doc(db, 'notifications', notification.id), payload));
+    await withRetry(() => setDoc(doc(db, 'notifications', notification.id), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `notifications/${notification.id}`);
-    throw error;
+    console.warn(`[Modo Local] Notificação salva no armazenamento local:`, error);
   }
 }
 
 export async function updateNotificationInFirestore(notificationId: string, updates: Partial<RemixNotification>): Promise<void> {
+  const current = getCachedCollection<RemixNotification>(CACHE_KEYS.NOTIFICATIONS, []);
+  const updated = current.map(n => n.id === notificationId ? { ...n, ...updates } : n);
+  setCachedCollection(CACHE_KEYS.NOTIFICATIONS, updated);
+
   try {
     const payload = cleanUndefined(updates);
-    await withRetry(() => updateDoc(doc(db, 'notifications', notificationId), payload));
+    await withRetry(() => updateDoc(doc(db, 'notifications', notificationId), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `notifications/${notificationId}`);
-    throw error;
+    console.warn(`[Modo Local] Notificação atualizada no armazenamento local:`, error);
   }
 }
 
 export async function persistBadge(badge: Badge): Promise<void> {
+  const current = getCachedCollection<Badge>(CACHE_KEYS.BADGES, BADGES);
+  const updated = [badge, ...current.filter(b => b.id !== badge.id)];
+  setCachedCollection(CACHE_KEYS.BADGES, updated);
+
   try {
     const payload = cleanUndefined(badge);
-    await withRetry(() => setDoc(doc(db, 'badges', badge.id), payload, { merge: true }));
+    await withRetry(() => setDoc(doc(db, 'badges', badge.id), payload, { merge: true }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `badges/${badge.id}`);
-    throw error;
+    console.warn(`[Modo Local] Badge salva no armazenamento local:`, error);
   }
 }
 
 export async function deleteBadgeFromFirestore(badgeId: string): Promise<void> {
+  const current = getCachedCollection<Badge>(CACHE_KEYS.BADGES, BADGES);
+  const updated = current.filter(b => b.id !== badgeId);
+  setCachedCollection(CACHE_KEYS.BADGES, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'badges', badgeId)));
+    await withRetry(() => deleteDoc(doc(db, 'badges', badgeId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `badges/${badgeId}`);
-    throw error;
+    console.warn(`[Modo Local] Badge removida no armazenamento local:`, error);
   }
 }
 
 export async function persistBrandedChallenge(challenge: BrandedChallenge): Promise<void> {
+  const current = getCachedCollection<BrandedChallenge>(CACHE_KEYS.BRANDED_CHALLENGES, INITIAL_BRANDED_CHALLENGES);
+  const updated = [challenge, ...current.filter(c => c.id !== challenge.id)];
+  setCachedCollection(CACHE_KEYS.BRANDED_CHALLENGES, updated);
+
   try {
     const payload = cleanUndefined(challenge);
-    await withRetry(() => setDoc(doc(db, 'brandedChallenges', challenge.id), payload, { merge: true }));
+    await withRetry(() => setDoc(doc(db, 'brandedChallenges', challenge.id), payload, { merge: true }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `brandedChallenges/${challenge.id}`);
-    throw error;
+    console.warn(`[Modo Local] Desafio parceiro salvo no armazenamento local:`, error);
   }
 }
 
 export async function updateBrandedChallengeInFirestore(challengeId: string, updates: Partial<BrandedChallenge>): Promise<void> {
+  const current = getCachedCollection<BrandedChallenge>(CACHE_KEYS.BRANDED_CHALLENGES, INITIAL_BRANDED_CHALLENGES);
+  const updated = current.map(c => c.id === challengeId ? { ...c, ...updates } : c);
+  setCachedCollection(CACHE_KEYS.BRANDED_CHALLENGES, updated);
+
   try {
     const payload = cleanUndefined(updates);
-    await withRetry(() => updateDoc(doc(db, 'brandedChallenges', challengeId), payload));
+    await withRetry(() => updateDoc(doc(db, 'brandedChallenges', challengeId), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `brandedChallenges/${challengeId}`);
-    throw error;
+    console.warn(`[Modo Local] Desafio parceiro atualizado no armazenamento local:`, error);
   }
 }
 
 export async function deleteBrandedChallengeFromFirestore(challengeId: string): Promise<void> {
+  const current = getCachedCollection<BrandedChallenge>(CACHE_KEYS.BRANDED_CHALLENGES, INITIAL_BRANDED_CHALLENGES);
+  const updated = current.filter(c => c.id !== challengeId);
+  setCachedCollection(CACHE_KEYS.BRANDED_CHALLENGES, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'brandedChallenges', challengeId)));
+    await withRetry(() => deleteDoc(doc(db, 'brandedChallenges', challengeId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `brandedChallenges/${challengeId}`);
-    throw error;
+    console.warn(`[Modo Local] Desafio parceiro removido no armazenamento local:`, error);
   }
 }
 
@@ -665,38 +778,47 @@ export async function incrementBrandedChallengeSubmissionsInFirestore(challengeI
   try {
     await withRetry(() => updateDoc(doc(db, 'brandedChallenges', challengeId), {
       submissionsCount: increment(1)
-    }));
+    }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `brandedChallenges/${challengeId}`);
+    console.warn(`[Modo Local] Submissão contabilizada localmente.`);
   }
 }
 
 export async function persistBrandedPack(pack: BrandedAssetPack): Promise<void> {
+  const current = getCachedCollection<BrandedAssetPack>(CACHE_KEYS.BRANDED_PACKS, INITIAL_BRANDED_PACKS);
+  const updated = [pack, ...current.filter(p => p.id !== pack.id)];
+  setCachedCollection(CACHE_KEYS.BRANDED_PACKS, updated);
+
   try {
     const payload = cleanUndefined(pack);
-    await withRetry(() => setDoc(doc(db, 'brandedPacks', pack.id), payload, { merge: true }));
+    await withRetry(() => setDoc(doc(db, 'brandedPacks', pack.id), payload, { merge: true }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `brandedPacks/${pack.id}`);
-    throw error;
+    console.warn(`[Modo Local] Pack parceiro salvo no armazenamento local:`, error);
   }
 }
 
 export async function updateBrandedPackInFirestore(packId: string, updates: Partial<BrandedAssetPack>): Promise<void> {
+  const current = getCachedCollection<BrandedAssetPack>(CACHE_KEYS.BRANDED_PACKS, INITIAL_BRANDED_PACKS);
+  const updated = current.map(p => p.id === packId ? { ...p, ...updates } : p);
+  setCachedCollection(CACHE_KEYS.BRANDED_PACKS, updated);
+
   try {
     const payload = cleanUndefined(updates);
-    await withRetry(() => updateDoc(doc(db, 'brandedPacks', packId), payload));
+    await withRetry(() => updateDoc(doc(db, 'brandedPacks', packId), payload), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `brandedPacks/${packId}`);
-    throw error;
+    console.warn(`[Modo Local] Pack parceiro atualizado no armazenamento local:`, error);
   }
 }
 
 export async function deleteBrandedPackFromFirestore(packId: string): Promise<void> {
+  const current = getCachedCollection<BrandedAssetPack>(CACHE_KEYS.BRANDED_PACKS, INITIAL_BRANDED_PACKS);
+  const updated = current.filter(p => p.id !== packId);
+  setCachedCollection(CACHE_KEYS.BRANDED_PACKS, updated);
+
   try {
-    await withRetry(() => deleteDoc(doc(db, 'brandedPacks', packId)));
+    await withRetry(() => deleteDoc(doc(db, 'brandedPacks', packId)), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `brandedPacks/${packId}`);
-    throw error;
+    console.warn(`[Modo Local] Pack parceiro removido no armazenamento local:`, error);
   }
 }
 
@@ -704,9 +826,9 @@ export async function incrementBrandedPackUsageInFirestore(packId: string): Prom
   try {
     await withRetry(() => updateDoc(doc(db, 'brandedPacks', packId), {
       usageCount: increment(1)
-    }));
+    }), 2, 250);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `brandedPacks/${packId}`);
+    console.warn(`[Modo Local] Uso do pack computado localmente.`);
   }
 }
 

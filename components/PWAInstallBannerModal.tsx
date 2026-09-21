@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Smartphone, Download, Share, PlusSquare, X, Check, Sparkles, ShieldCheck } from 'lucide-react';
+import { UPMMGlyph } from './UPMMBrandLogo';
 
 export const PWAInstallBannerModal: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install, triggerHaptic } = usePWAInstall();
@@ -29,9 +30,7 @@ export const PWAInstallBannerModal: React.FC = () => {
       {!dismissedBanner && (
         <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-[90] bg-[#1C1B19]/95 backdrop-blur-xl border border-[#FFB800]/40 p-3.5 rounded-3xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300">
           <div className="flex items-center space-x-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-[#FFB800] text-[#141311] flex items-center justify-center font-black shrink-0 shadow-md">
-              <Smartphone size={20} />
-            </div>
+            <UPMMGlyph size={40} showDetails={false} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h4 className="text-xs font-black uppercase tracking-tight text-white truncate">
@@ -74,9 +73,7 @@ export const PWAInstallBannerModal: React.FC = () => {
           <div className="bg-[#1C1B19] border border-[#3E3A35] w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 shadow-2xl space-y-5 text-[#EDE8E1]">
             <div className="flex justify-between items-start">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-[#FFB800] text-[#141311] rounded-2xl font-black">
-                  <Smartphone size={24} />
-                </div>
+                <UPMMGlyph size={48} showDetails={false} />
                 <div>
                   <span className="text-[9px] font-black uppercase text-[#FFB800] tracking-widest">
                     Instalação Direta

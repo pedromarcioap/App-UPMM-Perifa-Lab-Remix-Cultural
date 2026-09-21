@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Star, 
@@ -47,13 +47,14 @@ export const CommunitySpotlight: React.FC<CommunitySpotlightProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'artwork' | 'remix' | 'artists'>('all');
-  const [pinnedPhotoId, setPinnedPhotoId] = useState<string | null>(() => {
+  const [pinnedPhotoId, setPinnedPhotoId] = useState<string | null>(null);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem('upmm_pinned_spotlight') || null;
-    } catch {
-      return null;
-    }
-  });
+      const saved = localStorage.getItem('upmm_pinned_spotlight');
+      if (saved) setPinnedPhotoId(saved);
+    } catch {}
+  }, []);
 
   // Highlighted main artwork (pinned > highest vibe > gold standard > first)
   const heroPhoto = useMemo(() => {
@@ -274,13 +275,15 @@ export const CommunitySpotlight: React.FC<CommunitySpotlightProps> = ({
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {heroPhoto.tags.map(tag => (
-                  <span key={tag} className="text-[10px] font-bold text-[#FFB800] bg-white/5 px-2.5 py-1 rounded-lg">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+              {heroPhoto.tags && heroPhoto.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {heroPhoto.tags.map(tag => (
+                    <span key={tag} className="text-[10px] font-bold text-[#FFB800] bg-white/5 px-2.5 py-1 rounded-lg">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Actions (Mobile Ergonomic) */}
@@ -385,7 +388,7 @@ export const CommunitySpotlight: React.FC<CommunitySpotlightProps> = ({
                       {artist.responsa} Responsa
                     </span>
                     <span className="text-[9px] text-gray-400">
-                      {artist.badges.length} {artist.badges.length === 1 ? 'insígnia' : 'insígnias'}
+                      {(artist.badges || []).length} {(artist.badges || []).length === 1 ? 'insígnia' : 'insígnias'}
                     </span>
                   </div>
                 </div>

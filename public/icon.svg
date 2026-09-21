@@ -1,8 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <rect width="512" height="512" fill="#141311" rx="100"/>
-  <circle cx="256" cy="256" r="210" fill="#1C1B19" stroke="#FFB800" stroke-width="12"/>
-  <path d="M160 360 L256 140 L352 360 L290 360 L256 280 L222 360 Z" fill="#FFB800"/>
-  <path d="M120 200 C 160 120, 352 120, 392 200 C 352 280, 160 280, 120 200 Z" fill="none" stroke="#FF5722" stroke-width="14" opacity="0.85"/>
-  <circle cx="256" cy="200" r="32" fill="#00E5FF"/>
-  <text x="256" y="440" font-family="'Bebas Neue', Montserrat, sans-serif" font-size="42" font-weight="900" fill="#EDE8E1" text-anchor="middle" letter-spacing="4">UPMM PERIFA</text>
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&amp;family=JetBrains+Mono:wght@700;800&amp;display=swap');
+      .icon-stencil { font-family: 'Space Grotesk', sans-serif; font-weight: 900; letter-spacing: 0.04em; }
+      .icon-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.14em; font-weight: 700; }
+    </style>
+  </defs>
+
+  <!-- Fundo Concreto Asfalto Escuro com Cantos Arredondados para App Icon / Favicon -->
+  <rect width="512" height="512" rx="96" fill="#11100F"/>
+
+  <!-- Placa Industrial Concreto / Rebites -->
+  <rect x="28" y="28" width="456" height="456" rx="40" fill="#1C1B19" stroke="#36322D" stroke-width="4"/>
+  <circle cx="56" cy="56" r="6" fill="#66625C"/>
+  <circle cx="456" cy="56" r="6" fill="#66625C"/>
+  <circle cx="56" cy="456" r="6" fill="#66625C"/>
+  <circle cx="456" cy="456" r="6" fill="#66625C"/>
+
+  <!-- SÍMBOLO CENTRAL: GLIFO ESTÊNCIl BRUTALISTA MODULAR (U + P FUSION) -->
+  <g transform="translate(48, 54) scale(1.18)">
+    <!-- Módulo 1 (Esquerda): Letra "U" em blocos segmentados estêncil (Branco Titânio) -->
+    <path d="M40,50 H90 V140 C90,155 102,166 118,166 C134,166 146,155 146,140 V50 H196 V140 C196,182 162,216 118,216 C74,216 40,182 40,140 Z" fill="#EDE8E1"/>
+    <!-- Fenda de Estêncil / Corte Técnico no "U" -->
+    <rect x="36" y="100" width="164" height="9" fill="#1C1B19"/>
+
+    <!-- Módulo 2 (Direita): Letra "P" em Amarelo Solar (#FFB800) -->
+    <path d="M196,50 H270 C298,50 316,68 316,96 C316,124 298,142 270,142 H226 V216 H176 V50 H196 Z" fill="#FFB800"/>
+    <!-- Contraforma cortada do P -->
+    <rect x="226" y="78" width="46" height="36" fill="#1C1B19"/>
+    <!-- Fenda de estêncil no P -->
+    <rect x="170" y="100" width="150" height="9" fill="#1C1B19"/>
+
+    <!-- Módulo 3 (Base): Faixa de Alerta / Demarcação Urbana -->
+    <g transform="translate(40, 236)">
+      <rect x="0" y="0" width="272" height="46" fill="#FF5722"/>
+      <polygon points="0,0 20,0 0,46" fill="#1C1B19"/>
+      <polygon points="35,0 75,0 35,46" fill="#1C1B19"/>
+      <polygon points="90,0 130,0 90,46" fill="#1C1B19"/>
+      <polygon points="145,0 185,0 145,46" fill="#1C1B19"/>
+      <polygon points="200,0 240,0 200,46" fill="#1C1B19"/>
+      <polygon points="255,0 272,0 255,46" fill="#1C1B19"/>
+      <text x="136" y="30" text-anchor="middle" fill="#EDE8E1" class="icon-stencil" font-size="16">REMIX CULTURAL</text>
+    </g>
+
+    <!-- Indicador de Spray Cap 94 Ciano -->
+    <circle cx="50" cy="308" r="6" fill="#00E5FF"/>
+    <text x="66" y="312" fill="#00E5FF" class="icon-mono" font-size="9">CAP_94 // U.P.M.M</text>
+    <text x="310" y="312" text-anchor="end" fill="#8C877E" class="icon-mono" font-size="9">PMW_ZONE</text>
+  </g>
 </svg>

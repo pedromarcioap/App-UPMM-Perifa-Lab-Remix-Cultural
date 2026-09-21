@@ -42,10 +42,14 @@ import {
   Tag,
   Bell,
   Compass,
-  Plus
+  Plus,
+  Upload,
+  Database
 } from 'lucide-react';
+import { compressAndOptimizeImage } from './imageProcessor';
+import { UPMMBrandLogo, UPMMGlyph } from './components/UPMMBrandLogo';
 import { INITIAL_USERS, INITIAL_PHOTOS, INITIAL_GRAFFITI_SPOTS, INITIAL_COMMENTS, INITIAL_WEEKLY_CHALLENGES, COLORS, BADGES, PRESET_TAGS } from './constants';
-import { User, PhotoBase, UserLevel, GraffitiSpot, Comment, WeeklyChallenge, RemixNotification, Badge } from './types';
+import { User, PhotoBase, UserLevel, GraffitiSpot, Comment, WeeklyChallenge, RemixNotification, Badge, ArtworkAnalysis } from './types';
 import Editor from './components/Editor';
 import { ExploreHub } from './components/ExploreHub';
 import { PalmasRealMap } from './components/PalmasRealMap';
@@ -57,6 +61,9 @@ import { AdminChallengesCMS } from './components/AdminChallengesCMS';
 import { BadgeCMS } from './components/BadgeCMS';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { AuthModal } from './components/AuthModal';
+import { SupabaseSyncModal } from './components/SupabaseSyncModal';
+import { SupabaseService } from './services/supabaseService';
+import { ArtworkAnalysisBadge } from './components/ArtworkAnalysisBadge';
 import { CommunitySpotlight } from './components/CommunitySpotlight';
 import { AchievementCelebration } from './components/AchievementCelebration';
 import { RemixPodium } from './components/RemixPodium';
@@ -106,16 +113,7 @@ interface DiscoveredSpot {
 }
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    try {
-      const savedId = localStorage.getItem('upmm_current_user_id');
-      if (savedId) {
-        const found = INITIAL_USERS.find(u => u.id === savedId);
-        if (found) return found;
-      }
-    } catch {}
-    return INITIAL_USERS[0] || null;
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(INITIAL_USERS[0] || null);
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [photos, setPhotos] = useState<PhotoBase[]>(INITIAL_PHOTOS);
   const [graffitiSpots, setGraffitiSpots] = useState<GraffitiSpot[]>(INITIAL_GRAFFITI_SPOTS);
@@ -141,15 +139,23 @@ const App: React.FC = () => {
   const [authModalReason, setAuthModalReason] = useState<string | null>(null);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false);
-  const [isAdminDemoMode, setIsAdminDemoMode] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('upmm_admin_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isAdminDemoMode, setIsAdminDemoMode] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Hydrate user and admin preferences from localStorage post-mount
+  useEffect(() => {
+    try {
+      const savedId = localStorage.getItem('upmm_current_user_id');
+      if (savedId) {
+        const found = INITIAL_USERS.find(u => u.id === savedId);
+        if (found) setCurrentUser(found);
+      }
+      const savedAdmin = localStorage.getItem('upmm_admin_mode') === 'true';
+      if (savedAdmin) setIsAdminDemoMode(true);
+    } catch {}
+  }, []);
 
   // Global Universal Search Shortcut (⌘K / Ctrl+K)
   useEffect(() => {
@@ -359,6 +365,18 @@ const App: React.FC = () => {
         }
       }).catch(() => {});
 
+      // Sincronização inicial de obras relacionais com o Supabase
+      SupabaseService.getArtworks().then(sbArtworks => {
+        if (sbArtworks && sbArtworks.length > 0) {
+          setPhotos(prevPhotos => {
+            const map = new Map();
+            prevPhotos.forEach(p => map.set(p.id, p));
+            sbArtworks.forEach(p => map.set(p.id, { ...map.get(p.id), ...p }));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
       const { data } = sb.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           const user = await getSupabaseCurrentUser();
@@ -442,6 +460,7 @@ const App: React.FC = () => {
 
     setComments(prev => [newComment, ...prev]);
     persistComment(newComment);
+    SupabaseService.syncComment(newComment).catch(() => {});
 
     // Reward commenting with +3 Responsa and Community badge
     const updatedResponsa = currentUser.responsa + 3;
@@ -654,7 +673,7 @@ const App: React.FC = () => {
     // Disparar celebração festiva com link para a árvore de linhagem
     triggerAchievement({
       id: `remix_event_${Date.now()}`,
-      type: 'level',
+      type: 'level_up',
       title: 'Sua Arte foi Remixada!',
       subtitle: `@${randomRemixerName} criou um remix da sua foto`,
       icon: '🔔',
@@ -928,9 +947,19 @@ const App: React.FC = () => {
     deleteSpotFromFirestore(spotId);
   };
 
-  const handleOpenUploadForChallenge = (challenge: WeeklyChallenge) => {
-    setSelectedChallengeForUpload(challenge);
+  const handleOpenUpload = (challenge?: WeeklyChallenge | null) => {
+    if (!currentUser) {
+      setAuthModalReason('Faça login ou selecione seu perfil de artista para registrar e publicar fotos autorais de Palmas!');
+      setAuthModalTab('login');
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setSelectedChallengeForUpload(challenge || null);
     setIsUploadModalOpen(true);
+  };
+
+  const handleOpenUploadForChallenge = (challenge: WeeklyChallenge) => {
+    handleOpenUpload(challenge);
   };
 
   const handleSaveChallenge = (challenge: WeeklyChallenge) => {
@@ -1047,14 +1076,20 @@ const App: React.FC = () => {
 
       {/* Barra de Cabeçalho Fixa no Topo para Celulares & Mobile Native Shell (oculta na rota do editor de remix para liberar 100% da tela) */}
       {!isEditorRoute && (
-        <header className="lg:hidden sticky top-0 z-30 bg-[#141311]/95 backdrop-blur-md border-b border-[#3E3A35] px-4 py-2.5 flex items-center justify-between text-white shadow-sm">
-          <Link to="/" className="flex items-center space-x-2" title="UPMM PERIFA LAB">
-            <span className="text-xl font-display uppercase tracking-wider text-[#FFB800]">UPMM</span>
-            <span className="text-[9px] font-mono font-bold uppercase tracking-wider bg-[#242220] text-[#EDE8E1] px-2 py-0.5 rounded border border-[#3E3A35]">
-              PERIFA LAB
-            </span>
+        <header className="lg:hidden sticky top-0 z-30 bg-[#11100F]/95 backdrop-blur-md border-b border-[#36322D] px-3.5 py-2 flex items-center justify-between text-white shadow-sm">
+          <Link to="/" className="flex items-center" title="U.P.M.M // Periferia Mural & Movimento">
+            <UPMMBrandLogo variant="mobile" />
           </Link>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsSupabaseModalOpen(true)}
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] text-emerald-400 rounded-xl border border-[#3E3A35] transition"
+              title="Status Supabase & IA"
+              aria-label="Supabase & IA"
+            >
+              <Database size={18} />
+            </button>
+
             <button
               onClick={() => setIsUniversalSearchOpen(true)}
               className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] text-[#FFB800] rounded-xl border border-[#3E3A35] transition"
@@ -1107,13 +1142,8 @@ const App: React.FC = () => {
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-[#141311] border-r border-[#3E3A35] text-white p-5 z-50 overflow-y-auto no-scrollbar">
         {/* Brand Logo & Editorial Header */}
         <div className="mb-6">
-          <Link to="/" className="block group">
-            <h1 className="text-2xl font-display tracking-wider text-[#FFB800] uppercase leading-none">
-              UPMM PERIFA LAB
-            </h1>
-            <p className="text-[9px] font-sans uppercase tracking-widest text-[#EDE8E1]/60 font-semibold mt-1">
-              Cultura Urbana • Remix Territorial
-            </p>
+          <Link to="/" className="block group" title="U.P.M.M // Periferia Mural & Movimento">
+            <UPMMBrandLogo variant="sidebar" />
           </Link>
 
           {/* Quick Universal Search Trigger (⌘K) */}
@@ -1128,6 +1158,22 @@ const App: React.FC = () => {
             <span className="text-[9px] font-mono uppercase bg-[#242220] px-1.5 py-0.5 rounded text-[#EDE8E1]/60 group-hover:text-white border border-[#3E3A35]">
               ⌘K
             </span>
+          </button>
+        </div>
+
+        {/* Botão de Ação Rápida no Desktop: Lançar Nova Foto / Visão */}
+        <div className="mb-3 px-1">
+          <button
+            type="button"
+            onClick={() => handleOpenUpload()}
+            className="w-full min-h-[44px] py-2.5 px-3.5 bg-gradient-to-r from-[#FFB800] to-[#EAB308] hover:from-[#EAB308] hover:to-[#CA8A04] text-[#141311] rounded-xl font-black text-xs uppercase flex items-center justify-between shadow-md active:scale-95 transition cursor-pointer"
+            title="Tirar ou Subir Foto Real de Palmas"
+          >
+            <div className="flex items-center gap-2">
+              <Camera size={16} />
+              <span>Publicar Foto</span>
+            </div>
+            <Plus size={16} strokeWidth={3} />
           </button>
         </div>
 
@@ -1271,6 +1317,20 @@ const App: React.FC = () => {
               <span>Pódio de Remixes</span>
             </div>
           </Link>
+
+          <button 
+            onClick={() => setIsSupabaseModalOpen(true)}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition cursor-pointer"
+            title="Diagnóstico Supabase, PostgreSQL e IA"
+          >
+            <div className="flex items-center space-x-2.5">
+              <Database size={14} className="text-emerald-400" />
+              <span>Supabase & IA</span>
+            </div>
+            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
+              SYNC
+            </span>
+          </button>
         </nav>
 
         {/* User Info & Switcher Footer */}
@@ -1363,7 +1423,7 @@ const App: React.FC = () => {
 
       <main className={isEditorRoute ? "w-full p-0 max-w-none h-[100dvh] lg:h-auto lg:p-4 lg:max-w-6xl mx-auto" : "max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8"}>
         <Routes>
-          <Route path="/" element={<Feed photos={photos} onLike={handleLike} onShare={handleShare} currentUser={currentUser} onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }} comments={comments} onOpenComments={openCommentsForPhoto} users={users} isAdmin={isAdmin} />} />
+          <Route path="/" element={<Feed photos={photos} onLike={handleLike} onShare={handleShare} currentUser={currentUser} onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }} comments={comments} onOpenComments={openCommentsForPhoto} users={users} isAdmin={isAdmin} onOpenUpload={() => handleOpenUpload()} />} />
           <Route 
             path="/challenges" 
             element={
@@ -1495,6 +1555,7 @@ const App: React.FC = () => {
                 onEditPhoto={handleEditPhoto} 
                 onDeleteSpot={handleDeleteSpot} 
                 onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                onLogout={handleLogout}
                 notifications={notifications}
                 onMarkNotificationAsRead={handleMarkNotificationAsRead}
                 onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -1515,6 +1576,7 @@ const App: React.FC = () => {
                 onEditPhoto={handleEditPhoto} 
                 onDeleteSpot={handleDeleteSpot} 
                 onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                onLogout={handleLogout}
                 notifications={notifications}
                 onMarkNotificationAsRead={handleMarkNotificationAsRead}
                 onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -1715,9 +1777,30 @@ const App: React.FC = () => {
         <UploadModal 
           challenge={selectedChallengeForUpload}
           onClose={() => { setSelectedChallengeForUpload(null); setIsUploadModalOpen(false); }} 
-          onUpload={(p) => { 
-            setPhotos([p, ...photos]); 
-            persistPhoto(p);
+          onUpload={async (p) => { 
+            setPhotos(prev => [p, ...prev.filter(x => x.id !== p.id)]); 
+            try {
+              await persistPhoto(p);
+            } catch (err: any) {
+              console.warn("Aviso ao sincronizar foto com nuvem (mantida no cache local):", err);
+            }
+
+            // Sincronização inteligente com Supabase Storage e fila assíncrona de IA (Proporção, Perspectiva, Tons)
+            SupabaseService.processArtworkSubmission(p, p.imageUrl, (analysis: ArtworkAnalysis) => {
+              setPhotos(currentPhotos => currentPhotos.map(item => 
+                item.id === p.id 
+                  ? { ...item, analysis, analysisStatus: 'completed' } 
+                  : item
+              ));
+            }).then(({ photo: syncedPhoto }) => {
+              if (syncedPhoto.imageUrl && syncedPhoto.imageUrl !== p.imageUrl) {
+                setPhotos(currentPhotos => currentPhotos.map(item => 
+                  item.id === p.id ? { ...item, imageUrl: syncedPhoto.imageUrl, storagePath: syncedPhoto.storagePath } : item
+                ));
+              }
+            }).catch(sbErr => {
+              console.warn("Aviso na pipeline do Supabase:", sbErr);
+            });
             const isChallenge = Boolean(selectedChallengeForUpload);
             const addedResponsa = isChallenge ? (selectedChallengeForUpload?.rewardResponsa || 35) : 15;
             const newBadges = new Set([...currentUser.badges, 'click']);
@@ -1736,7 +1819,11 @@ const App: React.FC = () => {
             };
             setCurrentUser(updatedUser);
             setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-            persistUser(updatedUser);
+            try {
+              await persistUser(updatedUser);
+            } catch (err) {
+              console.warn("Aviso ao persistir usuário atualizado:", err);
+            }
             setSelectedChallengeForUpload(null);
             setIsUploadModalOpen(false); 
           }} 
@@ -1794,6 +1881,12 @@ const App: React.FC = () => {
           setIsUniversalSearchOpen(false);
           navigate('/map');
         }}
+      />
+
+      {/* Modal de Diagnóstico e Estrutura Relacional Supabase */}
+      <SupabaseSyncModal 
+        isOpen={isSupabaseModalOpen}
+        onClose={() => setIsSupabaseModalOpen(false)}
       />
     </div>
   );
@@ -2058,8 +2151,9 @@ const Feed: React.FC<{
   comments: Comment[],
   onOpenComments: (photo: PhotoBase) => void,
   users: User[],
-  isAdmin?: boolean
-}> = ({ photos, onLike, onShare, currentUser, onRequireLogin, comments, onOpenComments, users, isAdmin }) => {
+  isAdmin?: boolean,
+  onOpenUpload?: () => void
+}> = ({ photos, onLike, onShare, currentUser, onRequireLogin, comments, onOpenComments, users, isAdmin, onOpenUpload }) => {
   const navigate = useNavigate();
   const [tagSearchQuery, setTagSearchQuery] = useState('');
 
@@ -2116,6 +2210,17 @@ const Feed: React.FC<{
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estética periférica real de Palmas</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {onOpenUpload && (
+            <button 
+              type="button"
+              onClick={onOpenUpload}
+              className="inline-flex items-center gap-1.5 bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] hover:scale-105 text-[10px] font-black uppercase px-3.5 py-2 rounded-2xl transition shadow-sm cursor-pointer active:scale-95"
+              title="Tirar ou Subir Foto Real de Palmas"
+            >
+              <Camera size={13} />
+              <span>Publicar Foto</span>
+            </button>
+          )}
           <Link 
             to="/challenges" 
             className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF5722] to-[#FF8A65] text-white hover:scale-105 text-[10px] font-black uppercase px-3.5 py-2 rounded-2xl transition shadow-sm"
@@ -2475,6 +2580,12 @@ const Feed: React.FC<{
                         })}
                       </div>
                     )}
+
+                    {/* Badge e Painel de Mentoria Técnica IA */}
+                    <ArtworkAnalysisBadge 
+                      analysis={photo.analysis} 
+                      status={photo.analysisStatus} 
+                    />
                   </div>
                 </div>
 
@@ -3267,7 +3378,7 @@ const PALMAS_NEIGHBORHOODS = [
 
 const UploadModal: React.FC<{ 
   onClose: () => void, 
-  onUpload: (p: PhotoBase) => void, 
+  onUpload: (p: PhotoBase) => Promise<void> | void, 
   user: User,
   challenge?: WeeklyChallenge | null
 }> = ({ onClose, onUpload, user, challenge }) => {
@@ -3275,8 +3386,8 @@ const UploadModal: React.FC<{
   const [preview, setPreview] = useState<string>('');
   const [title, setTitle] = useState(challenge ? `Desafio: ${challenge.title}` : '');
   const [selectedTerritory, setSelectedTerritory] = useState(() => {
-    if (challenge?.neighborhood) {
-      const match = PALMAS_NEIGHBORHOODS.find(n => n.name.toLowerCase().includes(challenge.neighborhood!.toLowerCase()));
+    if (challenge?.featuredNeighborhood) {
+      const match = PALMAS_NEIGHBORHOODS.find(n => n.name.toLowerCase().includes(challenge.featuredNeighborhood!.toLowerCase()));
       if (match) return match;
     }
     return PALMAS_NEIGHBORHOODS[0];
@@ -3286,6 +3397,16 @@ const UploadModal: React.FC<{
   const [pexelsQuery, setPexelsQuery] = useState(challenge ? challenge.title.split(' ')[0] : '');
   const [pexelsResults, setPexelsResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // States for file processing, drag-and-drop, errors, and submission
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imageSizeKB, setImageSizeKB] = useState<number | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleTerritoryChange = (name: string) => {
     const item = PALMAS_NEIGHBORHOODS.find(n => n.name === name) || PALMAS_NEIGHBORHOODS[0];
@@ -3308,36 +3429,92 @@ const UploadModal: React.FC<{
     } 
   };
 
-  const handleSubmit = () => {
-    if (!preview || !title) return;
-    // Pequeno offset aleatório para que múltiplas fotos no mesmo território não fiquem exatamente no mesmo pixel
-    const jitter = () => (Math.random() - 0.5) * 0.0025;
-    const finalTags = ['#Palmas', `#${selectedTerritory.name.replace(/\s+/g, '')}`, '#ArteDeRua'];
-    if (challenge) {
-      challenge.tags.forEach(t => {
-        if (!finalTags.includes(t)) finalTags.push(t);
-      });
-      finalTags.push('#DesafioSemanal');
+  const handleFileSelected = async (file?: File | null) => {
+    if (!file) return;
+
+    // Validação flexível que suporta MIME types e extensões conhecidas de fotos
+    const isImageMime = file.type ? file.type.startsWith('image/') : false;
+    const isImageExt = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|svg)$/i.test(file.name || '');
+
+    if (!isImageMime && !isImageExt) {
+      setUploadError('Por favor, selecione um arquivo de imagem válido (JPG, PNG ou WEBP).');
+      return;
     }
-    const finalPhoto: PhotoBase = {
-      id: `photo_${Date.now()}`,
-      userId: user.id,
-      authorName: user.name,
-      title,
-      imageUrl: preview,
-      tags: finalTags,
-      vibeCount: 0,
-      type: 'base',
-      challengeId: challenge?.id,
-      location: {
-        lat: selectedTerritory.lat + jitter(),
-        lng: selectedTerritory.lng + jitter(),
-        neighborhood: selectedTerritory.name,
-        address: customAddress,
-        landmark: landmark
+
+    setUploadError(null);
+    setIsProcessing(true);
+
+    try {
+      // Compressão inteligente garantindo que a foto fique sob o limite de 1MB do Firestore e carregue ultra-rápido
+      const optimizedDataUrl = await compressAndOptimizeImage(file, {
+        maxWidth: 1280,
+        maxHeight: 1280,
+        maxSizeBytes: 450 * 1024, // 450 KB binário (~600 KB base64, garantindo folga total sob 1MB do Firestore)
+        quality: 0.82
+      });
+
+      setPreview(optimizedDataUrl);
+      const estKB = Math.round((optimizedDataUrl.length * 3) / 4 / 1024);
+      setImageSizeKB(estKB);
+
+      // Auto-preenche o título se estiver vazio
+      if (!title.trim()) {
+        const cleanName = (file.name || '').replace(/\.[^/.]+$/, '').trim();
+        const isGeneric = !cleanName || /^(img|image|pxl|photo|foto|dji|screenshot|captura|whatsapp)/i.test(cleanName);
+        setTitle(isGeneric ? `Visão em ${selectedTerritory.name}` : cleanName);
       }
-    };
-    onUpload(finalPhoto);
+    } catch (err: any) {
+      console.error("Erro ao processar imagem:", err);
+      setUploadError(err?.message || 'Falha ao processar e comprimir a foto. Tente novamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!preview || !title.trim() || isSubmitting || isProcessing) return;
+
+    setIsSubmitting(true);
+    setUploadError(null);
+
+    try {
+      // Pequeno offset aleatório para que múltiplas fotos no mesmo território não fiquem exatamente no mesmo pixel
+      const jitter = () => (Math.random() - 0.5) * 0.0025;
+      const finalTags = ['#Palmas', `#${selectedTerritory.name.replace(/\s+/g, '')}`, '#ArteDeRua'];
+      if (challenge) {
+        challenge.tags.forEach(t => {
+          if (!finalTags.includes(t)) finalTags.push(t);
+        });
+        finalTags.push('#DesafioSemanal');
+      }
+
+      const finalPhoto: PhotoBase = {
+        id: `photo_${Date.now()}`,
+        userId: user.id,
+        authorName: user.name,
+        title: title.trim(),
+        imageUrl: preview,
+        tags: finalTags,
+        vibeCount: 0,
+        type: 'base',
+        challengeId: challenge?.id,
+        createdAt: Date.now(),
+        location: {
+          lat: selectedTerritory.lat + jitter(),
+          lng: selectedTerritory.lng + jitter(),
+          neighborhood: selectedTerritory.name,
+          address: customAddress,
+          landmark: landmark
+        }
+      };
+
+      await onUpload(finalPhoto);
+      onClose();
+    } catch (err: any) {
+      console.error("Erro ao salvar foto:", err);
+      setUploadError(err?.message || 'Erro ao registrar obra no servidor. Tente novamente.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -3370,7 +3547,7 @@ const UploadModal: React.FC<{
           </div>
           <button 
             onClick={onClose} 
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] rounded-full text-zinc-400 hover:text-white transition"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] rounded-full text-zinc-400 hover:text-white transition cursor-pointer"
             aria-label="Fechar"
           >
             <X size={20} />
@@ -3385,7 +3562,7 @@ const UploadModal: React.FC<{
               activeSource === 'upload' ? 'bg-[#FFB800] text-[#141311] shadow-md' : 'bg-[#242220] text-zinc-400 hover:bg-[#2D2A26] border border-[#3E3A35]'
             }`}
           >
-            Meu Arquivo Local
+            Meu Arquivo Local / Câmera
           </button>
           <button 
             type="button"
@@ -3398,35 +3575,147 @@ const UploadModal: React.FC<{
           </button>
         </div>
 
+        {uploadError && (
+          <div className="mb-4 p-3 bg-red-950/60 border border-red-800 text-red-200 text-xs rounded-xl flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-400 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
         <div className="space-y-4">
           {activeSource === 'upload' ? (
             !preview ? (
-              <label className="block w-full h-44 border-2 border-dashed border-[#3E3A35] rounded-[2rem] flex flex-col items-center justify-center cursor-pointer bg-[#242220] hover:bg-[#2A2825] transition">
-                <Camera size={36} className="text-zinc-500" />
-                <span className="text-xs font-bold text-zinc-400 mt-2">Clique ou arraste uma foto</span>
+              <div 
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) handleFileSelected(f);
+                }}
+                className={`w-full p-6 border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center transition text-center ${
+                  isDragging 
+                    ? 'border-[#FFB800] bg-[#FFB800]/10 scale-[1.01]' 
+                    : 'border-[#3E3A35] bg-[#242220] hover:bg-[#2A2825]'
+                }`}
+              >
+                {/* Hidden File inputs */}
                 <input 
                   type="file" 
+                  ref={fileInputRef}
                   className="hidden" 
                   accept="image/*" 
-                  onChange={(e) => { 
-                    if (e.target.files?.[0]) { 
-                      const r = new FileReader(); 
-                      r.onload = (ev) => setPreview(ev.target?.result as string); 
-                      r.readAsDataURL(e.target.files[0]); 
-                    } 
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
                   }} 
                 />
-              </label>
+                <input 
+                  type="file" 
+                  ref={cameraInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  capture="environment"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
+                  }} 
+                />
+
+                {isProcessing ? (
+                  <div className="py-8 flex flex-col items-center gap-3">
+                    <Loader2 size={38} className="text-[#FFB800] animate-spin" />
+                    <p className="text-xs font-bold text-[#FFB800] uppercase tracking-wider">
+                      Otimizando imagem para a rede...
+                    </p>
+                    <span className="text-[10px] text-zinc-400">Reduzindo peso e preservando a qualidade visual</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 rounded-2xl bg-[#1C1B19] border border-[#3E3A35] flex items-center justify-center text-[#FFB800] mb-3">
+                      <Camera size={28} />
+                    </div>
+                    <h4 className="text-sm font-black uppercase text-white tracking-tight">
+                      {isDragging ? 'Solte a foto aqui!' : 'Arraste ou escolha uma foto do aparelho'}
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-1 max-w-sm">
+                      Fotografe o muro, a rua ou paisagem da sua quebrada em Palmas. Fotos pesadas são compactadas automaticamente sem perder nitidez.
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] rounded-xl text-xs font-black uppercase shadow-sm transition active:scale-95 cursor-pointer"
+                      >
+                        <Camera size={14} />
+                        <span>Tirar Foto (Câmera)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#1C1B19] hover:bg-[#2A2825] border border-[#3E3A35] text-zinc-200 rounded-xl text-xs font-black uppercase shadow-sm transition active:scale-95 cursor-pointer"
+                      >
+                        <Upload size={14} className="text-[#FFB800]" />
+                        <span>Escolher da Galeria</span>
+                      </button>
+                    </div>
+
+                    <span className="text-[10px] text-zinc-500 mt-3 font-mono">
+                      PNG, JPG, WEBP suportados
+                    </span>
+                  </>
+                )}
+              </div>
             ) : (
-              <div className="relative">
-                <img src={preview} referrerPolicy="no-referrer" className="w-full h-44 object-cover rounded-[2rem]" alt="" />
-                <button 
-                  type="button"
-                  onClick={() => setPreview('')}
-                  className="absolute top-3 right-3 bg-black/80 text-white p-2 rounded-full hover:bg-black"
-                >
-                  <X size={14} />
-                </button>
+              <div className="relative rounded-[2rem] overflow-hidden border border-[#3E3A35] bg-black">
+                <img 
+                  src={preview} 
+                  referrerPolicy="no-referrer" 
+                  className="w-full h-56 sm:h-64 object-cover" 
+                  alt="Prévia da foto" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                  <span className="text-[10px] font-mono bg-black/80 text-[#FFB800] border border-[#3E3A35] px-2.5 py-1 rounded-full">
+                    ✓ Imagem otimizada {imageSizeKB ? `(~${imageSizeKB} KB)` : ''}
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-black/80 hover:bg-[#1C1B19] border border-[#3E3A35] text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-full transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <Camera size={11} className="text-[#FFB800]" />
+                      <span>Trocar</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setPreview(''); setImageSizeKB(null); }}
+                      className="bg-red-900/80 hover:bg-red-800 text-white p-1.5 rounded-full transition cursor-pointer"
+                      title="Remover foto"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
+                  }} 
+                />
               </div>
             )
           ) : (
@@ -3455,6 +3744,7 @@ const UploadModal: React.FC<{
                     type="button"
                     onClick={() => { 
                       setPreview(p.src.large); 
+                      setImageSizeKB(null);
                       setTitle(`Visão: ${p.photographer}`); 
                     }}
                     className="hover:opacity-80 transition cursor-pointer"
@@ -3467,7 +3757,9 @@ const UploadModal: React.FC<{
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block ml-1">Título da Obra</label>
+            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block ml-1">
+              Título da Obra <span className="text-[#FFB800]">*</span>
+            </label>
             <input 
               type="text" 
               placeholder="Ex: Grafite da Resistência na Av. Tocantins" 
@@ -3515,11 +3807,27 @@ const UploadModal: React.FC<{
         </div>
 
         <button 
-          disabled={!preview || !title} 
+          disabled={!preview || !title.trim() || isProcessing || isSubmitting} 
           onClick={handleSubmit} 
-          className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] py-4 min-h-[48px] mt-6 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-102 active:scale-95 transition disabled:opacity-50 flex items-center justify-center cursor-pointer"
+          className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] py-4 min-h-[50px] mt-6 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-102 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
         >
-          Publicar Visão com Localização Real em Palmas
+          {isSubmitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Publicando Visão na Quebrada...</span>
+            </>
+          ) : isProcessing ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Otimizando Imagem...</span>
+            </>
+          ) : !preview ? (
+            <span>Selecione ou Tire uma Foto para Publicar</span>
+          ) : !title.trim() ? (
+            <span>Informe o Título da Obra Acima</span>
+          ) : (
+            <span>Publicar Visão com Localização Real em Palmas</span>
+          )}
         </button>
       </div>
     </div>

@@ -26,6 +26,9 @@ interface UniversalSearchModalProps {
   spots?: GraffitiSpot[];
   graffitiSpots?: GraffitiSpot[];
   isAdmin?: boolean;
+  onSelectPhoto?: (photoId: string) => void;
+  onSelectUser?: (userId: string) => void;
+  onSelectSpot?: (spotId?: string) => void;
 }
 
 export const UniversalSearchModal: React.FC<UniversalSearchModalProps> = ({
@@ -35,7 +38,10 @@ export const UniversalSearchModal: React.FC<UniversalSearchModalProps> = ({
   users = [],
   spots = [],
   graffitiSpots,
-  isAdmin = false
+  isAdmin = false,
+  onSelectPhoto,
+  onSelectUser,
+  onSelectSpot
 }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -57,6 +63,9 @@ export const UniversalSearchModal: React.FC<UniversalSearchModalProps> = ({
   }, [isOpen, onClose]);
 
   const searchResults = useMemo(() => {
+    if (!isOpen) {
+      return { photos: [], users: [], spots: [], sectors: [] };
+    }
     const q = query.toLowerCase().trim();
     const safePhotos = photos || [];
     const safeUsers = users || [];
@@ -206,7 +215,14 @@ export const UniversalSearchModal: React.FC<UniversalSearchModalProps> = ({
                 {searchResults.photos.map(p => (
                   <div
                     key={p.id}
-                    onClick={() => { navigate(`/remix/${p.id}`); onClose(); }}
+                    onClick={() => {
+                      if (onSelectPhoto) {
+                        onSelectPhoto(p.id);
+                      } else {
+                        navigate(`/remix/${p.id}`);
+                        onClose();
+                      }
+                    }}
                     className="p-2.5 bg-[#242220] hover:bg-[#2D2A26] rounded-xl border border-[#3E3A35] flex items-center justify-between gap-3 cursor-pointer transition"
                   >
                     <div className="flex items-center gap-3">
@@ -238,7 +254,14 @@ export const UniversalSearchModal: React.FC<UniversalSearchModalProps> = ({
                 {searchResults.users.map(u => (
                   <div
                     key={u.id}
-                    onClick={() => { navigate(`/profile/${u.id}`); onClose(); }}
+                    onClick={() => {
+                      if (onSelectUser) {
+                        onSelectUser(u.id);
+                      } else {
+                        navigate(`/profile/${u.id}`);
+                        onClose();
+                      }
+                    }}
                     className="p-2.5 bg-[#242220] hover:bg-[#2D2A26] rounded-xl border border-[#3E3A35] flex items-center justify-between gap-3 cursor-pointer transition"
                   >
                     <div className="flex items-center gap-2.5">

@@ -41,428 +41,237 @@ export const BADGES: Badge[] = [
 
 export const INITIAL_USERS: User[] = [
   {
-    id: 'user_pmw_3',
-    name: 'DJ Cerrado Beat',
-    username: 'djcerrado',
-    email: 'djcerrado@periferia.pmw',
-    password: '123',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    bio: 'Produtor sonoro e ativista visual no Setor Taquari. A voz do Tocantins.',
-    vibe: 580,
-    responsa: 120,
-    level: UserLevel.ATIVISTA,
-    badges: ['top_artist', 'click', 'alchemist', 'community'],
-    isAdmin: false,
-    hasNotifications: false,
-    neighborhood: 'Setor Taquari'
-  },
-  {
-    id: 'user_pmw_1',
-    name: 'Calebe Art',
-    username: 'calebeart',
-    email: 'calebe@periferia.pmw',
-    password: '123',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    bio: 'Grafiteiro e fotógrafo no Taquaralto. Registrando a resistência do cerrado.',
-    vibe: 342,
-    responsa: 95,
-    level: UserLevel.ATIVISTA,
-    badges: ['click', 'alchemist', 'community', 'spot_scout'],
-    isAdmin: true,
-    hasNotifications: false,
-    neighborhood: 'Taquaralto'
-  },
-  {
-    id: 'user_pmw_4',
-    name: 'Bia Muralha',
-    username: 'biamuralha',
-    email: 'bia@periferia.pmw',
-    password: '123',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    bio: 'Muralista e ilustradora urbana. Pintando murais autorizados no Cesamar e Plano Diretor.',
-    vibe: 310,
-    responsa: 78,
-    level: UserLevel.CRIADOR,
-    badges: ['click', 'community', 'spot_scout'],
-    isAdmin: false,
-    hasNotifications: false,
-    neighborhood: 'Plano Diretor Sul'
-  },
-  {
-    id: 'user_pmw_5',
-    name: 'Kadu Spray',
-    username: 'kaduspray',
-    email: 'kadu@periferia.pmw',
-    password: '123',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
-    bio: 'Pintor de letras e caligrafia urbana no Setor Morada do Sol.',
-    vibe: 240,
-    responsa: 60,
-    level: UserLevel.CRIADOR,
-    badges: ['click', 'alchemist'],
-    isAdmin: false,
-    hasNotifications: false,
-    neighborhood: 'Morada do Sol'
-  },
-  {
-    id: 'user_pmw_2',
-    name: 'Rayane Visão',
-    username: 'rayanevisao',
-    email: 'rayane@periferia.pmw',
+    id: 'user_pedro_admin',
+    name: 'Pedro Márcio',
+    username: 'pedromarcio',
+    email: 'pedromarcioap@gmail.com',
     password: '123',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    bio: 'Moradora do Aureny III. Minha lente foca no que ninguém vê.',
-    vibe: 220,
-    responsa: 48,
+    bio: 'Artista visual e fotógrafo periférico de Palmas - TO. Idealizador do UPMM Periferia Lab.',
+    vibe: 240,
+    responsa: 95,
+    level: UserLevel.ATIVISTA,
+    badges: ['top_artist', 'click', 'alchemist', 'community', 'master_remixer'],
+    isAdmin: true,
+    neighborhood: 'Plano Diretor Sul',
+    instagram: '@pedromarcioap',
+    joinedDate: '01/02/2026',
+    completedChallenges: ['ch_taquaralto_cores', 'ch_cerrado_luz']
+  },
+  {
+    id: 'user_lara',
+    name: 'Lara Silva',
+    username: 'laragrafite',
+    email: 'lara@upmm.art',
+    password: '123',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    bio: 'Murais, spray e tipografia urbana entre Aureny III e Taquaralto.',
+    vibe: 185,
+    responsa: 80,
     level: UserLevel.CRIADOR,
-    badges: ['click', 'community'],
-    isAdmin: false,
-    hasNotifications: false,
-    neighborhood: 'Jardim Aureny III'
+    badges: ['click', 'alchemist', 'tagger_pro', 'spot_scout'],
+    neighborhood: 'Jardim Aureny III',
+    instagram: '@laragrafite_pmw',
+    joinedDate: '15/02/2026',
+    completedChallenges: ['ch_taquaralto_cores']
+  },
+  {
+    id: 'user_kaio',
+    name: 'Kaio "Vetor" Santos',
+    username: 'kaiovetor',
+    email: 'kaio@upmm.art',
+    password: '123',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    bio: 'Fotografia de rua, texturas de muros e lambe-lambes do Tocantins.',
+    vibe: 140,
+    responsa: 60,
+    level: UserLevel.CRIADOR,
+    badges: ['click', 'community', 'battle_juror'],
+    neighborhood: 'Taquaralto',
+    instagram: '@kaiovetor_rua',
+    joinedDate: '20/02/2026',
+    completedChallenges: []
+  },
+  {
+    id: 'user_marina',
+    name: 'Marina Cerrado',
+    username: 'marinacerrado',
+    email: 'marina@upmm.art',
+    password: '123',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+    bio: 'Explorando cores solares, ipês e arquitetura periférica de Palmas.',
+    vibe: 110,
+    responsa: 50,
+    level: UserLevel.OBSERVADOR,
+    badges: ['click', 'cerrado_roots'],
+    neighborhood: 'Setor Taquari',
+    instagram: '@marina_cerrado',
+    joinedDate: '25/02/2026',
+    completedChallenges: []
   }
 ];
 
 export const INITIAL_COMMENTS: Comment[] = [
   {
-    id: 'comm_1',
-    targetId: 'photo_pmw_1',
+    id: 'com_1',
+    targetId: 'photo_mural_taquaralto',
     targetType: 'photo',
-    userId: 'user_pmw_2',
-    userName: 'Rayane Visão',
+    userId: 'user_pedro_admin',
+    userName: 'Pedro Márcio',
     userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    text: 'Essa luz do Taquari é única demais! A curva do mirante com o cerrado dá toda a poesia periférica.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 5,
-    likes: 4
-  },
-  {
-    id: 'comm_2',
-    targetId: 'photo_pmw_1',
-    targetType: 'photo',
-    userId: 'user_pmw_3',
-    userName: 'DJ Cerrado Beat',
-    userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    text: 'Cerrado vivo! O contraste da poeira vermelha com o céu dourado de Palmas ficou cinematográfico.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 2,
-    likes: 6
-  },
-  {
-    id: 'comm_3',
-    targetId: 'photo_pmw_3',
-    targetType: 'photo',
-    userId: 'user_pmw_4',
-    userName: 'Bia Muralha',
-    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    text: 'Esse mural coletivo na Av. Tocantins inspirou toda a molecada de Taquaralto. Respeito máximo pela autoria!',
-    createdAt: Date.now() - 1000 * 60 * 60 * 8,
-    likes: 5
-  },
-  {
-    id: 'comm_4',
-    targetId: 'remix_taquaralto_1',
-    targetType: 'photo',
-    userId: 'user_pmw_1',
-    userName: 'Calebe Art',
-    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    text: 'Ficou peso pesado esse remix @Rayane Visão! A sobreposição das cores com a base original deu uma nova vida ao muro.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 3,
-    likes: 3
-  },
-  {
-    id: 'comm_5',
-    targetId: 'spot_1',
-    targetType: 'spot',
-    userId: 'user_pmw_1',
-    userName: 'Calebe Art',
-    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    text: 'O dono do galpão assinou a liberação por escrito. Muro de alvenaria lisa, altura de 3m. Vamos organizar mutirão no fim de semana!',
-    createdAt: Date.now() - 1000 * 60 * 60 * 12,
-    likes: 7
-  },
-  {
-    id: 'comm_6',
-    targetId: 'spot_1',
-    targetType: 'spot',
-    userId: 'user_pmw_4',
-    userName: 'Bia Muralha',
-    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    text: 'Tô com primer e latas de spray preto e amarelo sobrando. Contem comigo pro mutirão coletivo!',
-    createdAt: Date.now() - 1000 * 60 * 60 * 6,
-    likes: 4
-  },
-  {
-    id: 'comm_7',
-    targetId: 'spot_2',
-    targetType: 'spot',
-    userId: 'user_pmw_2',
-    userName: 'Rayane Visão',
-    userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    text: 'Os pilares do viaduto no Aureny III são muito cinzas e pedem arte urgente. Estamos recolhendo apoio dos comerciantes da feira.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 18,
+    text: 'Esse contraste da luz da tarde no mural ficou impressionante! A textura do reboco destacou as cores.',
+    createdAt: 1774005000000,
     likes: 8
   },
   {
-    id: 'comm_8',
-    targetId: 'spot_3',
-    targetType: 'spot',
-    userId: 'user_pmw_5',
-    userName: 'Kadu Spray',
-    userAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
-    text: 'A pista do Cesamar é o templo da street art em Palmas. Espaço sempre aberto para troca de ideia e novos tags.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 10,
+    id: 'com_2',
+    targetId: 'photo_galpao_aureny',
+    targetType: 'photo',
+    userId: 'user_lara',
+    userName: 'Lara Silva',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    text: 'Essa textura do tijolo aparente tá pedindo um sticker de wildstyle escorrido.',
+    createdAt: 1774055000000,
     likes: 5
+  },
+  {
+    id: 'com_3',
+    targetId: 'spot_taquaralto_1',
+    targetType: 'spot',
+    userId: 'user_kaio',
+    userName: 'Kaio "Vetor" Santos',
+    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    text: 'Pintei lá sábado passado, a parede absorve bem e a iluminação noturna é boa.',
+    createdAt: 1773910000000,
+    likes: 3
   }
 ];
 
 export const INITIAL_GRAFFITI_SPOTS: GraffitiSpot[] = [
   {
-    id: 'spot_1',
-    userId: 'user_pmw_1',
-    userName: 'Calebe Art',
-    title: 'Muro da Liberdade - Taquaralto',
-    description: 'Proprietário autorizou pintura livre de temas sociais e identidade do cerrado.',
+    id: 'spot_taquaralto_1',
+    userId: 'user_lara',
+    userName: 'Lara Silva',
+    title: 'Muro da Av. Tocantins (Taquaralto)',
+    description: 'Espaço liberado para graffiti e bombing. Superfície lisa de alvenaria com 18m de extensão.',
     type: 'permitido',
-    lat: -10.3235,
-    lng: -48.3038,
+    lat: -10.3252,
+    lng: -48.2985,
     neighborhood: 'Taquaralto',
-    address: 'Av. Tocantins, Quadra 32, Taquaralto, Palmas - TO, 77064-580',
-    createdAt: Date.now()
+    address: 'Av. Tocantins, nº 1420',
+    createdAt: 1773900000000
   },
   {
-    id: 'spot_2',
-    userId: 'user_pmw_2',
-    userName: 'Rayane Visão',
-    title: 'Pilares do Viaduto Aureny III',
-    description: 'Ponto de alto fluxo na entrada do bairro, sugerido para intervenção e muralismo coletivo.',
-    type: 'sugerido',
-    lat: -10.2741,
-    lng: -48.3182,
-    neighborhood: 'Jardim Aureny III',
-    address: 'Av. Transversal com Rodovia TO-050, Jardim Aureny III, Palmas - TO, 77054-610',
-    createdAt: Date.now()
-  },
-  {
-    id: 'spot_3',
-    userId: 'user_pmw_1',
-    userName: 'Calebe Art',
-    title: 'Pista de Skate & Muro Cesamar',
-    description: 'Espaço tradicional de encontro da arte urbana e skate park de Palmas.',
+    id: 'spot_aureny_2',
+    userId: 'user_pedro_admin',
+    userName: 'Pedro Márcio',
+    title: 'Muralha Cultural Aureny I',
+    description: 'Ponto tradicional de encontro do hip-hop de Palmas. Muro de galpão comunitário.',
     type: 'permitido',
-    lat: -10.2175,
-    lng: -48.3248,
-    neighborhood: 'Plano Diretor Sul',
-    address: 'Parque Cesamar, Quadra 110 Sul, Palmas - TO, 77020-120',
-    createdAt: Date.now()
+    lat: -10.2780,
+    lng: -48.3180,
+    neighborhood: 'Jardim Aureny I',
+    address: 'Praça das Mangueiras',
+    createdAt: 1773920000000
+  },
+  {
+    id: 'spot_graciosa_3',
+    userId: 'user_kaio',
+    userName: 'Kaio "Vetor" Santos',
+    title: 'Pilares Ponte Graciosa (Sugestão)',
+    description: 'Excelente suporte para intervenção visual com temáticas dos rios e do Cerrado.',
+    type: 'sugerido',
+    lat: -10.1980,
+    lng: -48.3580,
+    neighborhood: 'Praia da Graciosa',
+    address: 'Acesso ponte Fernando Henrique Cardoso',
+    createdAt: 1773950000000
   }
 ];
 
 export const INITIAL_PHOTOS: PhotoBase[] = [
   {
-    id: 'photo_pmw_1',
-    userId: 'user_pmw_1',
-    authorName: 'Calebe Art',
-    title: 'Pôr do Sol no Taquari',
-    imageUrl: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Cerrado', 'Quebrada'],
-    vibeCount: 245,
-    isGoldStandard: true,
-    type: 'base',
-    battleWins: 28,
-    battleLosses: 12,
-    battleStreak: 2,
-    location: { 
-      lat: -10.3392, 
-      lng: -48.2865, 
-      neighborhood: 'Setor Taquari',
-      address: 'Av. LO-19 com Alameda 05, Setor Taquari, Palmas - TO, 77066-024',
-      landmark: 'Mirante Natural do Taquari'
-    }
-  },
-  {
-    id: 'photo_pmw_2',
-    userId: 'user_pmw_2',
-    authorName: 'Rayane Visão',
-    title: 'Geometria do Aureny III',
+    id: 'photo_mural_taquaralto',
+    userId: 'user_lara',
+    authorName: 'Lara Silva',
+    title: 'Mural Resplendor Periférico - Taquaralto',
     imageUrl: 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Arquitetura', 'Cotidiano'],
-    vibeCount: 189,
+    tags: ['#Palmas', '#Taquaralto', '#Grafite', '#ArteDeRua'],
+    vibeCount: 42,
     type: 'base',
-    battleWins: 18,
-    battleLosses: 14,
-    battleStreak: 1,
-    location: { 
-      lat: -10.2741, 
-      lng: -48.3182, 
-      neighborhood: 'Jardim Aureny III',
-      address: 'Av. Transversal, nº 210, Jardim Aureny III, Palmas - TO, 77054-610',
-      landmark: 'Próximo à Feira Coberta do Aureny III'
-    }
-  },
-  {
-    id: 'photo_pmw_3',
-    userId: 'user_pmw_1',
-    authorName: 'Calebe Art',
-    title: 'Mural Coletivo Taquaralto',
-    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Graffiti', 'Resistência'],
-    vibeCount: 310,
-    isGoldStandard: true,
-    type: 'base',
-    battleWins: 35,
-    battleLosses: 10,
-    battleStreak: 3,
-    location: { 
-      lat: -10.3235, 
-      lng: -48.3038, 
+    createdAt: 1774000000000,
+    location: {
+      lat: -10.325,
+      lng: -48.298,
       neighborhood: 'Taquaralto',
-      address: 'Av. Tocantins, Quadra 32, Taquaralto, Palmas - TO, 77064-580',
-      landmark: 'Corredor Cultural Taquaralto'
-    }
+      address: 'Av. Tocantins com Rua 10',
+      landmark: 'Muro da antiga feira'
+    },
+    battleWins: 5,
+    battleLosses: 1,
+    battleStreak: 4
   },
   {
-    id: 'photo_pmw_4',
-    userId: 'user_pmw_2',
-    authorName: 'Rayane Visão',
-    title: 'Cores da Quebrada Sul',
-    imageUrl: 'https://images.unsplash.com/photo-1582201942988-13e60e4556ee?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Cores', 'Cultura'],
-    vibeCount: 142,
-    type: 'base',
-    battleWins: 14,
-    battleLosses: 16,
-    battleStreak: 0,
-    location: { 
-      lat: -10.2982, 
-      lng: -48.3125, 
-      neighborhood: 'Morada do Sol',
-      address: 'Rua 15 esquina com Av. Contorno, Setor Morada do Sol, Palmas - TO, 77058-230',
-      landmark: 'Praça da Juventude Morada do Sol'
-    }
-  },
-  {
-    id: 'photo_pmw_5',
-    userId: 'user_pmw_2',
-    authorName: 'Rayane Visão',
-    title: 'Mural no Espaço Cultural',
+    id: 'photo_galpao_aureny',
+    userId: 'user_pedro_admin',
+    authorName: 'Pedro Márcio',
+    title: 'Luz Dourada no Galpão do Aureny III',
     imageUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Muralismo', 'Plano Diretor'],
-    vibeCount: 278,
-    isGoldStandard: true,
+    tags: ['#Palmas', '#Aureny', '#FotografiaDeRua', '#Textura'],
+    vibeCount: 68,
     type: 'base',
-    battleWins: 31,
-    battleLosses: 9,
-    battleStreak: 4,
+    createdAt: 1774050000000,
     location: {
-      lat: -10.2075,
-      lng: -48.3372,
-      neighborhood: 'Plano Diretor Sul',
-      address: 'Área Verde 301 Sul, Av. Teotônio Segurado, Palmas - TO, 77015-002',
-      landmark: 'Espaço Cultural José Gomes Sobrinho'
-    }
-  },
-  {
-    id: 'photo_pmw_6',
-    userId: 'user_pmw_1',
-    authorName: 'Calebe Art',
-    title: 'Pôr do Sol na Praia da Graciosa',
-    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Orla', 'Lago'],
-    vibeCount: 412,
-    isGoldStandard: true,
-    type: 'base',
-    battleWins: 42,
-    battleLosses: 8,
-    battleStreak: 5,
-    location: {
-      lat: -10.1985,
-      lng: -48.3650,
-      neighborhood: 'Orla Graciosa',
-      address: 'Praia da Graciosa, Orla Oeste, Palmas - TO, 77001-000',
-      landmark: 'Pier da Praia da Graciosa'
-    }
-  },
-  {
-    id: 'remix_taquaralto_1',
-    userId: 'user_pmw_2',
-    authorName: 'Rayane Visão',
-    title: 'Remix Cores da Sul - Taquaralto',
-    imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Graffiti', 'Remix', 'Taquaralto', 'Resistência'],
-    vibeCount: 245,
-    type: 'remix',
-    originalPhotoId: 'photo_pmw_3',
-    battleWins: 25,
-    battleLosses: 11,
-    battleStreak: 2,
-    location: {
-      lat: -10.3228,
-      lng: -48.3032,
-      neighborhood: 'Taquaralto',
-      address: 'Av. Tocantins, Quadra 32, Taquaralto, Palmas - TO',
-      landmark: 'Corredor Cultural Taquaralto'
-    }
-  },
-  {
-    id: 'remix_aureny_1',
-    userId: 'user_pmw_1',
-    authorName: 'Calebe Art',
-    title: 'Intervenção Geométrica - Aureny III',
-    imageUrl: 'https://images.unsplash.com/photo-1569091791842-7cfb64e04797?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Arquitetura', 'Remix', 'AurenyIII', 'StreetArt'],
-    vibeCount: 198,
-    type: 'remix',
-    originalPhotoId: 'photo_pmw_2',
-    battleWins: 21,
-    battleLosses: 13,
-    battleStreak: 1,
-    location: {
-      lat: -10.2745,
-      lng: -48.3175,
+      lat: -10.285,
+      lng: -48.315,
       neighborhood: 'Jardim Aureny III',
-      address: 'Av. Transversal, nº 210, Jardim Aureny III, Palmas - TO',
-      landmark: 'Próximo à Feira Coberta do Aureny III'
-    }
+      address: 'Rua 32',
+      landmark: 'Galpão Comunitário'
+    },
+    battleWins: 8,
+    battleLosses: 2,
+    battleStreak: 3
   },
   {
-    id: 'remix_espaco_1',
-    userId: 'user_pmw_1',
-    authorName: 'Calebe Art',
-    title: 'Remix Pátio Urbano - Espaço Cultural',
-    imageUrl: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Muralismo', 'Remix', 'PlanoDiretor', 'Spray'],
-    vibeCount: 360,
-    type: 'remix',
-    originalPhotoId: 'photo_pmw_5',
-    battleWins: 38,
-    battleLosses: 8,
-    battleStreak: 4,
+    id: 'photo_ipe_concreto',
+    userId: 'user_marina',
+    authorName: 'Marina Cerrado',
+    title: 'Ipê Amarelo e Concreto Armado',
+    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80',
+    tags: ['#Palmas', '#Cerrado', '#PlanoDiretorSul', '#NaturezaUrbana'],
+    vibeCount: 35,
+    type: 'base',
+    createdAt: 1774100000000,
     location: {
-      lat: -10.2080,
-      lng: -48.3365,
+      lat: -10.215,
+      lng: -48.330,
       neighborhood: 'Plano Diretor Sul',
-      address: 'Área Verde 301 Sul, Av. Teotônio Segurado, Palmas - TO',
-      landmark: 'Pista de Skate do Espaço Cultural'
-    }
+      address: 'Quadra 110 Sul',
+      landmark: 'Canteiro Central'
+    },
+    battleWins: 3,
+    battleLosses: 1,
+    battleStreak: 2
   },
   {
-    id: 'remix_graciosa_1',
-    userId: 'user_pmw_2',
-    authorName: 'Rayane Visão',
-    title: 'Remix Luz Dourada - Praia da Graciosa',
-    imageUrl: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=1200&q=80',
-    tags: ['Orla', 'Remix', 'Graciosa', 'Lago'],
-    vibeCount: 489,
+    id: 'photo_remix_solar',
+    userId: 'user_kaio',
+    authorName: 'Kaio "Vetor" Santos',
+    title: 'Intervenção Vetorial Sol & Tag',
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1200&q=80',
+    tags: ['#Remix', '#Palmas', '#Taquaralto', '#Stickers'],
+    vibeCount: 53,
     type: 'remix',
-    originalPhotoId: 'photo_pmw_6',
-    battleWins: 48,
-    battleLosses: 6,
-    battleStreak: 6,
+    originalPhotoId: 'photo_mural_taquaralto',
+    createdAt: 1774150000000,
     location: {
-      lat: -10.1990,
-      lng: -48.3645,
-      neighborhood: 'Orla Graciosa',
-      address: 'Praia da Graciosa, Orla Oeste, Palmas - TO',
-      landmark: 'Pier da Praia da Graciosa'
-    }
+      lat: -10.325,
+      lng: -48.298,
+      neighborhood: 'Taquaralto'
+    },
+    battleWins: 6,
+    battleLosses: 2,
+    battleStreak: 3
   }
 ];
 
@@ -882,62 +691,42 @@ export const ANIMATED_STICKERS: Sticker[] = [
 
 export const INITIAL_WEEKLY_CHALLENGES: WeeklyChallenge[] = [
   {
-    id: 'challenge_taquari',
-    title: 'Cores & Contrastes do Taquari',
-    subtitle: 'Desafio Semanal #1 • Ativo',
-    theme: 'Muralismo, estética periférica e luz do entardecer',
-    description: 'Capture ou remixe obras visuais celebrando o Setor Taquari. Destaque as cores terrosas do cerrado, tipografia marcante e a vivência da comunidade.',
-    bannerUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80',
-    startDate: '2026-09-08',
-    endDate: '2026-09-15',
-    rewardResponsa: 35,
+    id: 'ch_taquaralto_cores',
+    title: 'Cores de Taquaralto: Luz, Sombra e Spray',
+    subtitle: 'Explore a potência cromática do maior polo da região sul de Palmas.',
+    theme: 'Cultura Urbana & Luz Solar',
+    description: 'Fotografe ou faça remix de fachadas, muros, feiras ou texturas de Taquaralto. A comunidade votará na obra com melhor expressão periférica.',
+    bannerUrl: 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80',
+    startDate: '01/03/2026',
+    endDate: '31/03/2026',
+    rewardResponsa: 40,
     rewardBadgeId: 'weekly_warrior',
-    tags: ['#Taquari', '#Cerrado', '#DesafioSemanal', '#LuzDoEntardecer'],
-    featuredNeighborhood: 'Setor Taquari',
+    tags: ['#Taquaralto', '#DesafioSemanal', '#CoresDoSul', '#PMW'],
+    featuredNeighborhood: 'Taquaralto',
     status: 'active',
     rules: [
-      'Foto base capturada em Palmas ou remix autoral com stickers e filtros',
-      'Incluir a hashtag oficial #Taquari ou #DesafioSemanal na obra',
-      'Votação popular e júri comunitário na Arena de Batalhas'
+      'A foto ou intervenção deve ser situada em Taquaralto',
+      'Use pelo menos um sticker ou tipografia de rua no remix',
+      'Respeite a identidade dos moradores e o patrimônio da comunidade'
     ]
   },
   {
-    id: 'challenge_aureny_typo',
-    title: 'Tipografia & Bomb no Aureny',
-    subtitle: 'Desafio Semanal #2 • Ativo',
-    theme: 'Caligrafia urbana, letras marcadas e tags de respeito',
-    description: 'Transforme as paredes e cenários do Jardim Aureny III com caligrafia urbana expressiva, letras autorais, lambes virtuais e stickers de peso.',
-    bannerUrl: 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80',
-    startDate: '2026-09-07',
-    endDate: '2026-09-14',
-    rewardResponsa: 30,
-    rewardBadgeId: 'tagger_pro',
-    tags: ['#Aureny', '#Tipografia', '#StreetTag', '#QuebradaViva'],
+    id: 'ch_cerrado_luz',
+    title: 'Cerrado Urbano: Galpões e Entardecer',
+    subtitle: 'O contraste da luz dourada tocantinense com o concreto da cidade.',
+    theme: 'Iluminação Natural & Formas',
+    description: 'Capture as tonalidades quentes do pôr do sol incidindo sobre os muros e vias de Palmas.',
+    bannerUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80',
+    startDate: '10/03/2026',
+    endDate: '10/04/2026',
+    rewardResponsa: 35,
+    rewardBadgeId: 'cerrado_roots',
+    tags: ['#Cerrado', '#LuzDourada', '#Palmas', '#DesafioSemanal'],
     featuredNeighborhood: 'Jardim Aureny III',
     status: 'active',
     rules: [
-      'Foco visual em letras, caligrafia, bombs ou tipografia expressiva',
-      'Válido para remixes feitos no Editor com tags e textos estilizados',
-      'Respeito às diretrizes comunitárias de não-violência'
-    ]
-  },
-  {
-    id: 'challenge_graciosa_sunset',
-    title: 'Pôr do Sol & Silhuetas da Graciosa',
-    subtitle: 'Desafio Semanal #3 • Em Breve',
-    theme: 'O famoso pôr do sol tocantinense fusionado com street art digital',
-    description: 'Prepare sua visão para a Praia da Graciosa e Lago de Palmas: mescle silhuetas urbanas, skate, hip-hop e os tons alaranjados do pôr do sol.',
-    bannerUrl: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80',
-    startDate: '2026-09-15',
-    endDate: '2026-09-22',
-    rewardResponsa: 40,
-    rewardBadgeId: 'cerrado_roots',
-    tags: ['#Graciosa', '#SunsetPalmas', '#Silhuetas', '#LagoDePalmas'],
-    featuredNeighborhood: 'Praia da Graciosa',
-    status: 'upcoming',
-    rules: [
-      'Inscrições abrem na próxima semana',
-      'Prêmio especial para o remix com mais vibes e vitórias na arena'
+      'Priorize a luz natural do fim de tarde',
+      'Valorize elementos vegetais nativos ou texturas de alvenaria'
     ]
   }
 ];
@@ -971,149 +760,44 @@ export const PALMAS_NEIGHBORHOODS = [
 
 export const INITIAL_BRANDED_CHALLENGES: BrandedChallenge[] = [
   {
-    id: 'branded_challenge_tintas_tocantins',
-    title: 'Desafio Tintas Tocantins • Cores do Cerrado Vivo',
-    description: 'Transforme os muros e a arquitetura periférica de Palmas utilizando a vibrante paleta solar do Cerrado tocantinense (amarelos intensos, terracota, verdes e azuis profundos).',
+    id: 'bch_palmas_cores',
+    title: 'Desafio Cores da Quebrada Tocantinense',
+    description: 'Trabalhe o contraste das cores quentes do cerrado sobre os muros e intervenções de Palmas.',
     sponsor: {
-      id: 'sponsor_tintas_tocantins',
-      name: 'Tintas Tocantins',
-      logoUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=160&q=80',
-      brandColor: '#FF9800',
-      websiteUrl: 'https://tintastocantins.com.br'
+      id: 'sp_tintas_cerrado',
+      name: 'Tintas Cerrado PMW',
+      logoUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=200&q=80',
+      brandColor: '#FFB800'
     },
-    prizeDescription: 'R$ 2.000 em Bolsa de Fomento Criativo + Kit Profissional com 24 Latas de Spray Premium & Caps Especiais',
-    rewardVibePoints: 250,
-    bannerUrl: 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80',
+    prizeDescription: 'Kit Spray Pro + Bolsa de Fomento Criativo R$ 1.500',
+    rewardVibePoints: 100,
+    bannerUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80',
     active: true,
-    startDate: '2026-09-10',
-    endDate: '2026-09-30',
-    submissionsCount: 14,
-    featuredNeighborhood: 'Taquaralto & Região Sul',
-    rules: [
-      'Remixes criados no Estúdio UPMM com foco nas cores do Cerrado',
-      'Pelo menos 1 sticker da coleção oficial Tintas Tocantins ou textura de tinta',
-      'Incentivo total ao peer-review e respeito à comunidade'
-    ],
-    tags: ['#TintasTocantins', '#CoresDoCerrado', '#TaquaraltoViva', '#StreetArtPMW']
-  },
-  {
-    id: 'branded_challenge_banco_criativo',
-    title: 'Desafio Banco Criativo PMW • Muros do Futuro',
-    description: 'Conectando inovação periférica e arte visual: crie remixes explorando o futuro dos bairros de Palmas, sua juventude e sua potência cultural.',
-    sponsor: {
-      id: 'sponsor_banco_criativo',
-      name: 'Banco Criativo Tocantins',
-      logoUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=160&q=80',
-      brandColor: '#00E5FF',
-      websiteUrl: 'https://bancocriativotocantins.org'
-    },
-    prizeDescription: 'R$ 1.500 em Vale-Equipamentos Tecnológicos (Tablet de Desenho) + Exposição Digital no Hub Cultural',
-    rewardVibePoints: 180,
-    bannerUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80',
-    active: true,
-    startDate: '2026-09-12',
-    endDate: '2026-10-05',
-    submissionsCount: 9,
-    featuredNeighborhood: 'Jardim Aureny III',
-    rules: [
-      'Inovação visual, colagens e elementos futuristas combinados com o cotidiano',
-      'Aberto a todos os usuários da UPMM de qualquer nível'
-    ],
-    tags: ['#MurosDoFuturo', '#BancoCriativo', '#AurenyDigital', '#ArteFuturo']
+    startDate: '01/03/2026',
+    endDate: '30/04/2026',
+    submissionsCount: 18,
+    featuredNeighborhood: 'Taquaralto',
+    rules: ['Foto original de Palmas', 'Intervenção com stickers ou spray', 'Compartilhamento comunitário'],
+    tags: ['#CoresDaQuebrada', '#TintasCerrado', '#PMW']
   }
 ];
 
 export const INITIAL_BRANDED_PACKS: BrandedAssetPack[] = [
   {
-    id: 'pack_tintas_tocantins_spray',
-    title: 'Pack Especial Tintas Tocantins • Street Drip & Caps',
+    id: 'pack_tintas_cerrado',
+    title: 'Pack Especial Cores do Tocantins',
     sponsor: {
-      id: 'sponsor_tintas_tocantins',
-      name: 'Tintas Tocantins',
-      logoUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=160&q=80',
-      brandColor: '#FF9800',
-      websiteUrl: 'https://tintastocantins.com.br'
+      id: 'sp_tintas_cerrado',
+      name: 'Tintas Cerrado PMW',
+      logoUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=200&q=80',
+      brandColor: '#FFB800'
     },
     active: true,
-    startDate: '2026-09-01',
-    endDate: '2026-12-31',
-    usageCount: 42,
-    description: 'Coleção oficial com latas de spray estilizadas, respingos de tinta de alta viscosidade, carimbos urbanos e texturas de escorrido com a identidade das cores tocantinenses.',
-    items: [
-      {
-        id: 'tt_spray_gold',
-        name: 'Spray Tintas Tocantins Dourado Sol',
-        category: 'Packs em Parceria',
-        type: 'static_sticker',
-        url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 130"><rect x="30" y="45" width="40" height="75" rx="8" fill="%23FF9800" stroke="%232D2A26" stroke-width="4"/><rect x="40" y="26" width="20" height="20" rx="4" fill="%232D2A26"/><circle cx="50" cy="20" r="6" fill="%23FFFFFF"/><path d="M30 65 L70 65 L70 85 L30 85 Z" fill="%232D2A26"/><text x="50" y="78" font-family="sans-serif" font-weight="900" font-size="7" fill="%23FF9800" text-anchor="middle">TOCANTINS</text><circle cx="50" cy="102" r="10" fill="%23FFE082"/></svg>',
-        tags: ['tintas tocantins', 'spray', 'lata', 'laranja', 'dourado', 'patrocinado'],
-        aspectRatio: 0.77,
-        packId: 'pack_tintas_tocantins_spray',
-        sponsorName: 'Tintas Tocantins'
-      },
-      {
-        id: 'tt_drip_splash',
-        name: 'Escorrido Drip Solar TT',
-        category: 'Packs em Parceria',
-        type: 'static_sticker',
-        url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 90"><path d="M10 20 Q35 5 70 20 T130 15 L130 35 Q115 50 110 75 Q105 85 95 65 Q85 85 75 55 Q65 90 55 60 Q45 80 35 45 Q20 60 10 35 Z" fill="%23FF9800" stroke="%232D2A26" stroke-width="4"/><circle cx="65" cy="85" r="5" fill="%23FF9800"/><circle cx="108" cy="88" r="4" fill="%23FF9800"/></svg>',
-        tags: ['drip', 'escorrido', 'tinta', 'laranja', 'tintas tocantins'],
-        aspectRatio: 1.55,
-        packId: 'pack_tintas_tocantins_spray',
-        sponsorName: 'Tintas Tocantins'
-      },
-      {
-        id: 'tt_fatcap_tag',
-        name: 'Selo Fat Cap Pro TT',
-        category: 'Packs em Parceria',
-        type: 'static_sticker',
-        url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="%232D2A26" stroke="%23FF9800" stroke-width="6"/><circle cx="50" cy="50" r="32" fill="%23FF9800"/><text x="50" y="46" font-family="sans-serif" font-weight="900" font-size="12" fill="%232D2A26" text-anchor="middle">FAT CAP</text><text x="50" y="62" font-family="sans-serif" font-weight="900" font-size="9" fill="%23FFFFFF" text-anchor="middle">PRO PMW</text></svg>',
-        tags: ['fatcap', 'selo', 'tintas tocantins', 'badge', 'tag'],
-        aspectRatio: 1.0,
-        packId: 'pack_tintas_tocantins_spray',
-        sponsorName: 'Tintas Tocantins'
-      }
-    ]
-  },
-  {
-    id: 'pack_banco_criativo_future',
-    title: 'Pack Banco Criativo • Conexões & Neon Tech',
-    sponsor: {
-      id: 'sponsor_banco_criativo',
-      name: 'Banco Criativo Tocantins',
-      logoUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=160&q=80',
-      brandColor: '#00E5FF',
-      websiteUrl: 'https://bancocriativotocantins.org'
-    },
-    active: true,
-    startDate: '2026-09-05',
-    endDate: '2026-11-30',
-    usageCount: 29,
-    description: 'Stickers de circuitos luminosos, ícones de fomento cultural, hologramas de rua e setas de impulso criativo para potencializar sua intervenção visual.',
-    items: [
-      {
-        id: 'bc_holo_badge',
-        name: 'Holograma Impulso Criativo',
-        category: 'Packs em Parceria',
-        type: 'static_sticker',
-        url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><polygon points="60,10 110,35 110,85 60,110 10,85 10,35" fill="%2300E5FF" fill-opacity="0.25" stroke="%2300E5FF" stroke-width="5"/><polygon points="60,25 95,45 95,75 60,95 25,75 25,45" fill="%232D2A26" stroke="%23FFFFFF" stroke-width="3"/><text x="60" y="58" font-family="sans-serif" font-weight="900" font-size="10" fill="%2300E5FF" text-anchor="middle">IMPULSO</text><text x="60" y="72" font-family="sans-serif" font-weight="900" font-size="9" fill="%23FFB800" text-anchor="middle">CRIATIVO</text></svg>',
-        tags: ['banco criativo', 'holograma', 'futurista', 'neon', 'patrocinado'],
-        aspectRatio: 1.0,
-        packId: 'pack_banco_criativo_future',
-        sponsorName: 'Banco Criativo Tocantins'
-      },
-      {
-        id: 'bc_cyber_arrow',
-        name: 'Seta Cyber Periferia Neon',
-        category: 'Packs em Parceria',
-        type: 'static_sticker',
-        url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 80"><path d="M10 40 L90 40 L90 20 L135 40 L90 60 L90 40 Z" fill="%2300E5FF" stroke="%232D2A26" stroke-width="4"/><path d="M20 30 L80 30" stroke="%23FFFFFF" stroke-width="3" stroke-linecap="round"/></svg>',
-        tags: ['seta', 'cyber', 'neon', 'azul', 'banco criativo'],
-        aspectRatio: 1.75,
-        packId: 'pack_banco_criativo_future',
-        sponsorName: 'Banco Criativo Tocantins'
-      }
-    ]
+    startDate: '01/01/2026',
+    endDate: '31/12/2026',
+    items: [],
+    usageCount: 124,
+    description: 'Paleta cromática e efeitos urbanos criados em parceria com artistas da periferia tocantinense.'
   }
 ];
 

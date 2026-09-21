@@ -38,13 +38,16 @@ interface CuradoriaPopularCMSProps {
   photos?: PhotoBase[];
   users?: User[];
   spots?: GraffitiSpot[];
+  graffitiSpots?: GraffitiSpot[];
   challenges?: WeeklyChallenge[];
   brandedChallenges?: BrandedChallenge[];
   brandedPacks?: BrandedAssetPack[];
   currentUser?: User | null;
   isAdmin?: boolean;
   onApprovePhoto?: (photoId: string) => void;
-  onRejectPhoto?: (photoId: string, reason: string) => void;
+  onRejectPhoto?: (photoId: string, reason?: string) => void;
+  onFlagOverlap?: (photoId: string) => void;
+  onRequireLogin?: () => void;
   onSaveBrandedChallenge?: (challenge: BrandedChallenge) => void;
   onToggleAdminDemo?: () => void;
 }
@@ -74,66 +77,7 @@ interface ModerationItem {
   sponsorName?: string;
 }
 
-const INITIAL_TRIAGEM_ITEMS: ModerationItem[] = [
-  {
-    id: 'triagem_1',
-    type: 'base_mural',
-    title: 'Mural da Resistência • Galpão Setor Taquari',
-    authorName: 'Marcos Aureny',
-    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    neighborhood: 'Setor Taquari',
-    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80',
-    submittedAt: 'Há 25 minutos',
-    authorizationDocUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
-    authorizationStatus: 'autorizado_sindico',
-    overlapRiskScore: 4,
-    status: 'pending',
-    communityVotes: [
-      { curatorId: 'c1', curatorName: 'Mestre Kbron (Conselho Taquari)', vote: 'approve', comment: 'Muro limpo e autorização formal assinada.' },
-      { curatorId: 'c2', curatorName: 'DJ Cerrado Beat', vote: 'approve', comment: 'Excelente iluminação para matriz de remix.' }
-    ],
-    b2bGrantEligible: true,
-    b2bGrantValue: 4500,
-    sponsorName: 'Tinta Guará do Brasil'
-  },
-  {
-    id: 'triagem_2',
-    type: 'remix_redline',
-    title: 'Redline Geométrico • Sobre Muro Aureny III',
-    authorName: 'Kauê Cerrado',
-    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    neighborhood: 'Jardim Aureny III',
-    imageUrl: 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80',
-    originalImageUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80',
-    submittedAt: 'Há 1 hora',
-    authorizationStatus: 'muro_livre',
-    overlapRiskScore: 12,
-    status: 'pending',
-    communityVotes: [
-      { curatorId: 'c3', curatorName: 'Bia Muralha', vote: 'approve', comment: 'Respeitou a autoria do fotógrafo e adicionou camadas ricas.' }
-    ],
-    b2bGrantEligible: true,
-    b2bGrantValue: 3200,
-    sponsorName: 'Tinta Guará do Brasil'
-  },
-  {
-    id: 'triagem_3',
-    type: 'base_mural',
-    title: 'Empena Cega • Av. Tocantins Taquaralto',
-    authorName: 'Rayane Visão',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    neighborhood: 'Taquaralto',
-    imageUrl: 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=1200&q=80',
-    submittedAt: 'Há 3 horas',
-    authorizationStatus: 'aguardando_termo',
-    overlapRiskScore: 68,
-    status: 'under_jury',
-    communityVotes: [
-      { curatorId: 'c1', curatorName: 'Mestre Kbron', vote: 'reject', comment: 'Possível sobreposição sobre tag antiga catalogada. Em análise pelo conselho.' }
-    ],
-    b2bGrantEligible: false
-  }
-];
+const INITIAL_TRIAGEM_ITEMS: ModerationItem[] = [];
 
 export const CuradoriaPopularCMS: React.FC<CuradoriaPopularCMSProps> = ({
   photos = [],
@@ -151,7 +95,7 @@ export const CuradoriaPopularCMS: React.FC<CuradoriaPopularCMSProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'triagem' | 'anti_atropelo' | 'liquidacao' | 'radar'>('triagem');
   const [items, setItems] = useState<ModerationItem[]>(INITIAL_TRIAGEM_ITEMS);
-  const [selectedItem, setSelectedItem] = useState<ModerationItem | null>(INITIAL_TRIAGEM_ITEMS[0]);
+  const [selectedItem, setSelectedItem] = useState<ModerationItem | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [pixBatchStatus, setPixBatchStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
@@ -159,8 +103,8 @@ export const CuradoriaPopularCMS: React.FC<CuradoriaPopularCMSProps> = ({
 
   // Indicators calculations
   const pendingCount = items.filter(i => i.status === 'pending' || i.status === 'under_jury').length;
-  const approvedTotal = items.filter(i => i.status === 'approved').length + 512; // Base catalogada
-  const openBudgetB2B = 18500; // R$ 18.500 fomento ativo Tinta Guará + Banco Criativo
+  const approvedTotal = items.filter(i => i.status === 'approved').length;
+  const openBudgetB2B = 0;
 
   const handleApprove = (item: ModerationItem) => {
     setItems(prev => prev.map(it => it.id === item.id ? { ...it, status: 'approved' } : it));
@@ -336,6 +280,19 @@ export const CuradoriaPopularCMS: React.FC<CuradoriaPopularCMSProps> = ({
 
       {/* TAB 1: MESA DE TRIAGEM (LADO A LADO) */}
       {activeTab === 'triagem' && (
+        items.length === 0 ? (
+          <div className="bg-[#1C1B19] border border-[#3E3A35] rounded-3xl p-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-[#242220] border border-[#3E3A35] flex items-center justify-center mx-auto text-[#FFB800]">
+              <ShieldCheck size={32} />
+            </div>
+            <div className="max-w-md mx-auto space-y-1">
+              <h3 className="text-xl font-display uppercase text-white">Fila de Triagem Vazia</h3>
+              <p className="text-xs text-[#EDE8E1]/60">
+                Nenhuma obra ou submissão pendente de moderação no momento. As novas submissões comunitárias aparecerão aqui em tempo real.
+              </p>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: List of Pending Items */}
           <div className="lg:col-span-4 space-y-3">
@@ -492,6 +449,7 @@ export const CuradoriaPopularCMS: React.FC<CuradoriaPopularCMSProps> = ({
             </div>
           ) : null}
         </div>
+        )
       )}
 
       {/* TAB 2: SISTEMA ANTI-ATROPELO */}

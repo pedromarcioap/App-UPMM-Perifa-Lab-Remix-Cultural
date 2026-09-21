@@ -37,6 +37,8 @@ export interface User {
   joinedDate?: string;
   completedChallenges?: string[];
   googleLinked?: boolean;
+  supabaseLinked?: boolean;
+  authProvider?: 'supabase' | 'firebase' | 'local';
   emailVerified?: boolean;
 }
 
@@ -79,6 +81,9 @@ export interface PhotoBase {
   createdAt?: number;
   verified?: boolean;
   overlapRisk?: boolean;
+  storagePath?: string;
+  analysis?: ArtworkAnalysis;
+  analysisStatus?: 'idle' | 'queued' | 'processing' | 'completed' | 'failed';
 }
 
 export interface GraffitiSpot {
@@ -147,6 +152,34 @@ export interface RemixNotification {
   remixPhotoUrl: string;
   createdAt: number;
   read: boolean;
+}
+
+export interface ArtworkAnalysis {
+  id: string;
+  artworkId: string;
+  userId: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  proportionScore: number;
+  perspectiveScore: number;
+  tonalScore: number;
+  overallScore: number;
+  critique: string;
+  strengths: string[];
+  corrections: string[];
+  suggestedDrills: string[];
+  redlineOverlayUrl?: string;
+  modelUsed?: string;
+  createdAt: number;
+  completedAt?: number;
+}
+
+export interface SupabaseIntegrationStatus {
+  configured: boolean;
+  url?: string;
+  authActive: boolean;
+  storageActive: boolean;
+  databaseActive: boolean;
+  sessionUserEmail?: string;
 }
 
 export * from './types/assets';

@@ -127,7 +127,7 @@ export const RemixPodium: React.FC<RemixPodiumProps> = ({
         r.authorName.toLowerCase().includes(q) ||
         (r.basePhoto && r.basePhoto.authorName.toLowerCase().includes(q)) ||
         (r.location?.neighborhood && r.location.neighborhood.toLowerCase().includes(q)) ||
-        r.tags.some(t => t.toLowerCase().includes(q))
+        (r.tags || []).some(t => t.toLowerCase().includes(q))
       );
     }
 

@@ -23,11 +23,13 @@ import {
   Upload,
   Bell,
   GitBranch,
-  CheckCheck
+  CheckCheck,
+  LogOut
 } from 'lucide-react';
 import { User, PhotoBase, GraffitiSpot, Badge, UserLevel, RemixNotification } from '../types';
 import { BADGES, PALMAS_NEIGHBORHOODS } from '../constants';
 import { RemixNotificationModal, RemixNotificationCard } from './RemixNotificationCenter';
+import { compressAndOptimizeImage } from '../imageProcessor';
 
 interface ProfileDashboardProps {
   users: User[];
@@ -39,6 +41,7 @@ interface ProfileDashboardProps {
   onEditPhoto: (photoId: string, updatedData: { title: string; tags: string[]; neighborhood?: string }) => void;
   onDeleteSpot: (spotId: string) => void;
   onRequireLogin: () => void;
+  onLogout?: () => void;
   notifications?: RemixNotification[];
   onMarkNotificationAsRead?: (id: string) => void;
   onMarkAllNotificationsAsRead?: () => void;
@@ -55,6 +58,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   onEditPhoto,
   onDeleteSpot,
   onRequireLogin,
+  onLogout,
   notifications = [],
   onMarkNotificationAsRead,
   onMarkAllNotificationsAsRead,
@@ -84,7 +88,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -93,19 +97,18 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarUploadError('A imagem deve ter no máximo 5MB.');
-      return;
+    try {
+      const optimized = await compressAndOptimizeImage(file, {
+        maxWidth: 360,
+        maxHeight: 360,
+        maxSizeBytes: 180 * 1024,
+        quality: 0.8
+      });
+      setEditAvatar(optimized);
+      setAvatarUploadError(null);
+    } catch (err: any) {
+      setAvatarUploadError(err?.message || 'Erro ao carregar avatar.');
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setEditAvatar(reader.result);
-        setAvatarUploadError(null);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   // Edit Photo Modal state
@@ -448,10 +451,21 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               {isOwner && (
                 <button
                   onClick={handleOpenEditProfile}
-                  className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-white/10"
+                  className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-white/10 cursor-pointer"
                 >
                   <Edit3 size={12} />
                   <span>Editar Dados</span>
+                </button>
+              )}
+
+              {isOwner && onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-red-500/30 cursor-pointer"
+                  title="Desconectar do Perfil / Supabase Auth"
+                >
+                  <LogOut size={12} />
+                  <span>Sair da Conta</span>
                 </button>
               )}
             </div>
@@ -1406,6 +1420,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         isOpen={isNotificationsModalOpen}
         onClose={() => setIsNotificationsModalOpen(false)}
         notifications={userRemixNotifications}
+        unreadCount={unreadRemixCount}
         onMarkAsRead={handleMarkAsReadInternal}
         onMarkAllAsRead={handleMarkAllAsReadInternal}
       />
