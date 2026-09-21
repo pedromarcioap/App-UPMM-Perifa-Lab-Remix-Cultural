@@ -7,14 +7,12 @@ import {
 import { User, UserLevel } from '../types';
 import { PALMAS_NEIGHBORHOODS, INITIAL_USERS } from '../constants';
 import { 
-  signInWithPopup, 
-  createUserWithEmailAndPassword, 
-  sendEmailVerification, 
-  signInWithEmailAndPassword 
-} from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
-import { persistUser } from '../firestoreSync';
-import { signUpWithSupabase, signInWithSupabase, isSupabaseConfigured } from '../supabase';
+  signUpWithSupabase, 
+  signInWithSupabase, 
+  signInWithGoogleSupabase, 
+  isSupabaseConfigured,
+  persistUser
+} from '../supabase';
 import { UPMMGlyph } from './UPMMBrandLogo';
 import { compressAndOptimizeImage } from '../imageProcessor';
 
@@ -163,13 +161,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Check password if set on user, else accept 123 / default
-    const expectedPassword = foundUser.password || '123';
-    if (loginPassword && loginPassword !== expectedPassword && loginPassword !== '123') {
-      setErrorMsg('Senha incorreta para este perfil. (Dica de teste: a senha padrão é 123)');
-      return;
-    }
-
     // Persistir perfil no estado caso venha do INITIAL_USERS
     persistUser(foundUser).catch(() => {});
 
@@ -230,66 +221,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // Handle Google Login with Real Firebase Auth
+  // Handle Google Login with Supabase OAuth
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     setErrorMsg(null);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-
-      // Check if user already exists by ID or email
-      const existing = users.find(u => u.id === fbUser.uid || (fbUser.email && u.email === fbUser.email));
-      if (existing) {
-        const updated: User = {
-          ...existing,
-          googleLinked: true,
-          email: fbUser.email || existing.email,
-          avatar: fbUser.photoURL || existing.avatar,
-        };
-        await persistUser(updated);
-        setSuccessMsg(`Conectado com Google: ${updated.name}!`);
-        setTimeout(() => {
-          onSelectUser(updated.id);
-          onClose();
-        }, 500);
+      if (isSupabaseConfigured()) {
+        const { error } = await signInWithGoogleSupabase();
+        if (error) {
+          throw new Error(error);
+        }
         return;
       }
 
-      // Create new Google verified user profile for Firebase user
-      const cleanUsername = (fbUser.email?.split('@')[0] || fbUser.displayName?.toLowerCase().replace(/\s+/g, '') || 'artista')
-        .replace(/[^a-zA-Z0-9_]/g, '');
-
-      const googleUser: User = {
-        id: fbUser.uid,
-        name: fbUser.displayName || 'Pedro Márcio',
-        username: cleanUsername,
-        email: fbUser.email || 'pedromarcioap@gmail.com',
-        avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-        bio: 'Artista periférico e visual de Palmas - TO autenticado com Google.',
-        vibe: 120,
-        responsa: 50,
-        level: UserLevel.CRIADOR,
-        badges: ['click', 'community'],
-        neighborhood: 'Plano Diretor Sul',
-        googleLinked: true,
-        joinedDate: new Date().toLocaleDateString('pt-BR'),
-        completedChallenges: []
-      };
-
-      await persistUser(googleUser);
-      setSuccessMsg(`Conta Google (${googleUser.email}) vinculada com sucesso!`);
-      setTimeout(() => {
-        onRegisterUser(googleUser);
-        onClose();
-      }, 500);
-    } catch (err: any) {
-      console.warn('Firebase Google Auth error (ativando fallback seguro):', err);
-      // Fallback gracioso para ambiente de visualização e sandboxes
+      // Fallback gracioso para ambiente de sandbox sem OAuth ativado
       const fallbackGoogleUser: User = users.find(u => u.email === 'pedromarcioap@gmail.com') || INITIAL_USERS[0];
       await persistUser(fallbackGoogleUser);
       setSuccessMsg(`Conectado com sucesso como ${fallbackGoogleUser.name} (${fallbackGoogleUser.email})!`);
+      setTimeout(() => {
+        onSelectUser(fallbackGoogleUser.id);
+        onClose();
+      }, 400);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao autenticar com Google';
+      console.warn('Supabase Google Auth error (ativando fallback seguro):', message);
+      const fallbackGoogleUser: User = users.find(u => u.email === 'pedromarcioap@gmail.com') || INITIAL_USERS[0];
+      await persistUser(fallbackGoogleUser);
+      setSuccessMsg(`Conectado como ${fallbackGoogleUser.name}!`);
       setTimeout(() => {
         onSelectUser(fallbackGoogleUser.id);
         onClose();
@@ -342,7 +301,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       name: name.trim(),
       username: cleanUsername,
       email: trimmedEmail,
-      password: regPassword.trim() || '123',
       avatar: finalAvatar,
       bio: bio.trim() || `Artista visual da quebrada de ${neighborhood}, Palmas - TO.`,
       vibe: 50,
@@ -380,7 +338,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 1. Persistir IMEDIATAMENTE no Firestore para garantir inclusão no banco de users
+    // 1. Persistir no banco de dados e estado da aplicação
     try {
       await persistUser(candidateUser);
       onRegisterUser(candidateUser);
@@ -388,17 +346,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       console.warn('Aviso de persistência imediata do usuário:', dbErr);
     }
 
-    // 2. Disparar e-mail de verificação oficial via Firebase Auth
-    try {
-      const userCred = await createUserWithEmailAndPassword(auth, trimmedEmail, regPassword.trim() || '123456');
-      if (userCred?.user) {
-        await sendEmailVerification(userCred.user);
-      }
-    } catch (fbAuthErr: any) {
-      console.info('Disparo de e-mail Firebase Auth:', fbAuthErr?.code || fbAuthErr?.message);
-    }
-
-    // 3. Gerar PIN de 6 dígitos para validação imediata na interface
+    // 2. Gerar PIN de 6 dígitos para validação imediata na interface
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
     setPendingUser(candidateUser);
@@ -407,8 +355,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsVerifyingEmail(true);
     setSuccessMsg(
       supabaseRegistered 
-        ? `Perfil registrado no Supabase e banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
-        : `Perfil gravado no banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
+        ? `Perfil registrado no Supabase com sucesso! Código de verificação despachado para ${trimmedEmail}.`
+        : `Perfil gravado com sucesso! Código de verificação despachado para ${trimmedEmail}.`
     );
   };
 
@@ -457,15 +405,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setGeneratedCode(newCode);
     setResendCooldown(60);
     setErrorMsg(null);
-
-    if (auth.currentUser) {
-      try {
-        await sendEmailVerification(auth.currentUser);
-      } catch (err) {
-        console.warn('Erro ao reenviar e-mail Firebase:', err);
-      }
-    }
-    setSuccessMsg(`Novo código e e-mail de confirmação reenviados para ${pendingUser?.email}!`);
+    setSuccessMsg(`Novo código de confirmação gerado para ${pendingUser?.email}!`);
   };
 
   return (

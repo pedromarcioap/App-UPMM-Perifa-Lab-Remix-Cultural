@@ -22,7 +22,6 @@ export interface User {
   name: string;
   username?: string;
   email?: string;
-  password?: string;
   avatar: string;
   bio: string;
   vibe: number;
@@ -38,7 +37,7 @@ export interface User {
   completedChallenges?: string[];
   googleLinked?: boolean;
   supabaseLinked?: boolean;
-  authProvider?: 'supabase' | 'firebase' | 'local';
+  authProvider?: 'supabase' | 'local';
   emailVerified?: boolean;
 }
 
@@ -135,6 +134,11 @@ export interface Comment {
   text: string;
   createdAt: number;
   likes?: number;
+  redlineData?: {
+    overlayUrl?: string;
+    annotations?: Array<{ x: number; y: number; text: string; color?: string }>;
+    technicalAspect?: 'proportion' | 'perspective' | 'tonal_values' | 'general';
+  } | null;
 }
 
 export interface RemixNotification {

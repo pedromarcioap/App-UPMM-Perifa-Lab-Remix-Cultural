@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient, User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { User } from './types';
+import { User, PhotoBase, Comment } from './types';
 
 // Environment variables
 const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {} as Record<string, string>;
@@ -347,7 +347,7 @@ export async function uploadImageToSupabase(
 /**
  * Sincronizar Obra de Arte / Foto com a tabela relacional 'artworks'
  */
-export async function persistArtworkToSupabase(photo: any): Promise<{ success: boolean; error?: string }> {
+export async function persistArtworkToSupabase(photo: PhotoBase): Promise<{ success: boolean; error?: string }> {
   const client = getSupabase();
   if (!client) return { success: false, error: 'Supabase não configurado.' };
 
@@ -381,8 +381,9 @@ export async function persistArtworkToSupabase(photo: any): Promise<{ success: b
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err?.message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Falha desconhecida ao persistir obra';
+    return { success: false, error: message };
   }
 }
 
@@ -449,7 +450,7 @@ export async function deleteArtworkFromSupabase(id: string): Promise<boolean> {
 /**
  * Persistir Comentário ou Redline Peer-Review
  */
-export async function persistCommentToSupabase(comment: any): Promise<{ success: boolean; error?: string }> {
+export async function persistCommentToSupabase(comment: Comment): Promise<{ success: boolean; error?: string }> {
   const client = getSupabase();
   if (!client) return { success: false, error: 'Supabase não configurado.' };
 
@@ -473,8 +474,9 @@ export async function persistCommentToSupabase(comment: any): Promise<{ success:
       return { success: false, error: error.message };
     }
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err?.message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Falha ao persistir comentário';
+    return { success: false, error: message };
   }
 }
 
@@ -516,6 +518,256 @@ export async function fetchArtworkAnalysisFromSupabase(artworkId: string): Promi
   } catch {
     return null;
   }
+}
+
+/**
+ * Persistir Usuário / Perfil no Supabase
+ */
+export async function persistUserToSupabase(user: User): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) return { success: false, error: 'Supabase não configurado.' };
+
+  try {
+    const { error } = await client
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        avatar_url: user.avatar,
+        bio: user.bio,
+        vibe: user.vibe || 0,
+        responsa: user.responsa || 0,
+        level: user.level,
+        badges: user.badges || [],
+        neighborhood: user.neighborhood || 'Plano Diretor Sul',
+        instagram: user.instagram || null,
+        is_admin: Boolean(user.isAdmin)
+      }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('[Supabase DB] Erro ao persistir perfil de usuário:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Falha ao persistir perfil';
+    return { success: false, error: message };
+  }
+}
+
+export const persistUser = persistUserToSupabase;
+export const persistPhoto = persistArtworkToSupabase;
+
+/**
+ * Persistir Ponto de Graffiti no Supabase
+ */
+export async function persistSpotToSupabase(spot: any): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) return { success: false, error: 'Supabase não configurado.' };
+
+  try {
+    const { error } = await client
+      .from('graffiti_spots')
+      .upsert({
+        id: spot.id,
+        user_id: spot.userId,
+        user_name: spot.userName,
+        title: spot.title,
+        description: spot.description || null,
+        type: spot.type,
+        lat: spot.lat,
+        lng: spot.lng,
+        neighborhood: spot.neighborhood || 'Taquaralto',
+        address: spot.address || null,
+        created_at: spot.createdAt ? new Date(spot.createdAt).toISOString() : new Date().toISOString()
+      }, { onConflict: 'id' });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Falha ao persistir ponto de graffiti';
+    return { success: false, error: message };
+  }
+}
+
+export const persistSpot = persistSpotToSupabase;
+
+/**
+ * Iniciar Login com Google via Supabase OAuth
+ */
+export async function signInWithGoogleSupabase(): Promise<{ error: string | null }> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: 'Supabase não configurado.' };
+  }
+
+  try {
+    const { error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    return { error: error ? error.message : null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro ao iniciar autenticação Google';
+    return { error: message };
+  }
+}
+
+/**
+ * Buscar Pontos de Graffiti da tabela relacional
+ */
+export async function fetchSpotsFromSupabase(): Promise<any[]> {
+  const client = getSupabase();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('graffiti_spots')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: row.id,
+      userId: row.user_id,
+      userName: row.user_name,
+      title: row.title,
+      description: row.description || '',
+      type: row.type,
+      lat: row.lat,
+      lng: row.lng,
+      neighborhood: row.neighborhood,
+      address: row.address,
+      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Buscar Comentários da tabela relacional
+ */
+export async function fetchCommentsFromSupabase(): Promise<Comment[]> {
+  const client = getSupabase();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('comments')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: row.id,
+      targetId: row.target_id,
+      targetType: row.target_type,
+      userId: row.user_id,
+      userName: row.user_name,
+      userAvatar: row.user_avatar,
+      text: row.text,
+      likes: row.likes || 0,
+      redlineData: row.redline_data || null,
+      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Buscar Perfis de Usuários do Supabase
+ */
+export async function fetchProfilesFromSupabase(): Promise<User[]> {
+  const client = getSupabase();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('profiles')
+      .select('*');
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      username: row.username,
+      email: row.email,
+      avatar: row.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      bio: row.bio || '',
+      vibe: row.vibe || 50,
+      responsa: row.responsa || 35,
+      level: row.level || 'Aprendiz',
+      badges: row.badges || ['click'],
+      neighborhood: row.neighborhood || 'Plano Diretor Sul',
+      instagram: row.instagram || undefined,
+      isAdmin: Boolean(row.is_admin),
+      joinedDate: row.created_at ? new Date(row.created_at).toLocaleDateString('pt-BR') : undefined,
+      supabaseLinked: true,
+      authProvider: 'supabase'
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Configurar Subscrições Realtime no Supabase
+ */
+export function subscribeToSupabaseRealtime(callbacks: {
+  onArtworks?: (artworks: PhotoBase[]) => void;
+  onComments?: (comments: Comment[]) => void;
+  onSpots?: (spots: any[]) => void;
+  onProfiles?: (profiles: User[]) => void;
+}): () => void {
+  const client = getSupabase();
+  if (!client) {
+    return () => {};
+  }
+
+  const channel = client
+    .channel('public_db_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'artworks' }, async () => {
+      if (callbacks.onArtworks) {
+        const updated = await fetchArtworksFromSupabase();
+        callbacks.onArtworks(updated);
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, async () => {
+      if (callbacks.onComments) {
+        const updated = await fetchCommentsFromSupabase();
+        callbacks.onComments(updated);
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'graffiti_spots' }, async () => {
+      if (callbacks.onSpots) {
+        const updated = await fetchSpotsFromSupabase();
+        callbacks.onSpots(updated);
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, async () => {
+      if (callbacks.onProfiles) {
+        const updated = await fetchProfilesFromSupabase();
+        callbacks.onProfiles(updated);
+      }
+    })
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
 }
 
 /**

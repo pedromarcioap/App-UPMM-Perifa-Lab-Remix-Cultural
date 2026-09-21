@@ -118,6 +118,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 8.1 Garantia de Imutabilidade e Preservação de Linhagem de Remixes
+CREATE OR REPLACE FUNCTION public.enforce_remix_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Impede a alteração do autor, tipo e da foto de referência original
+    IF (OLD.type = 'remix' AND (NEW.original_photo_id IS DISTINCT FROM OLD.original_photo_id OR NEW.type <> OLD.type)) THEN
+        RAISE EXCEPTION 'A linhagem e o vínculo de autoria original do remix são inalienáveis e não podem ser modificados.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_enforce_remix_immutability ON public.artworks;
+CREATE TRIGGER trg_enforce_remix_immutability
+    BEFORE UPDATE ON public.artworks
+    FOR EACH ROW EXECUTE PROCEDURE public.enforce_remix_immutability();
+
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
@@ -156,4 +173,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Políticas de Acesso ao Storage
 CREATE POLICY "Visualização pública de arquivos de arte" ON storage.objects FOR SELECT USING (bucket_id IN ('artworks', 'redlines', 'avatars'));
-CREATE POLICY "Upload permitido para usuários autenticados" ON storage.objects FOR INSERT WITH CHECK (bucket_id IN ('artworks', 'redlines', 'avatars'));
+CREATE POLICY "Upload permitido para usuários autenticados" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id IN ('artworks', 'redlines', 'avatars') 
+    AND (auth.role() = 'authenticated' OR auth.role() = 'service_role')
+);

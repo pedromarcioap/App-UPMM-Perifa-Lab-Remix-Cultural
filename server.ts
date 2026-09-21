@@ -12,6 +12,50 @@ async function startServer() {
   app.use(express.json({ limit: "20mb" }));
   app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
+  // Armazenamento em memória de Rate Limiting por IP e Endpoint
+  const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+  // Limpeza periódica de chaves expiradas para evitar vazamento de memória
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, record] of rateLimitStore.entries()) {
+      if (now > record.resetTime) {
+        rateLimitStore.delete(key);
+      }
+    }
+  }, 5 * 60 * 1000);
+
+  function createRateLimiter(maxRequests: number, windowMs: number = 60 * 1000, endpointName: string = 'API') {
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || 'unknown';
+      const key = `${endpointName}:${clientIp}`;
+      const now = Date.now();
+      const record = rateLimitStore.get(key);
+
+      if (!record || now > record.resetTime) {
+        rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+        return next();
+      }
+
+      if (record.count >= maxRequests) {
+        const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
+        res.set('Retry-After', String(retryAfterSeconds));
+        return res.status(429).json({
+          error: `Muitas requisições para ${endpointName}. Limite de ${maxRequests} requisições por minuto atingido.`,
+          retryAfterSeconds,
+          status: 429
+        });
+      }
+
+      record.count += 1;
+      return next();
+    };
+  }
+
+  const visionRateLimiter = createRateLimiter(10, 60 * 1000, 'Análise Visual IA');
+  const pexelsRateLimiter = createRateLimiter(30, 60 * 1000, 'Busca Pexels');
+  const mapsRateLimiter = createRateLimiter(20, 60 * 1000, 'Radar Cultural Maps');
+
   // Cliente Supabase no Servidor (lazy com service role ou anon key)
   let supabaseServerClient: SupabaseClient | null = null;
   function getSupabaseServer(): SupabaseClient | null {
@@ -78,8 +122,8 @@ async function startServer() {
     return geminiClient;
   }
 
-  // Maps Grounding Endpoint using gemini-2.5-flash with googleMaps tool
-  app.post("/api/maps-grounding", async (req, res) => {
+  // Maps Grounding Endpoint using gemini-2.5-flash with googleMaps tool (Rate limit: 20/min)
+  app.post("/api/maps-grounding", mapsRateLimiter, async (req, res) => {
     try {
       const { query, latitude, longitude } = req.body;
       const lat = typeof latitude === 'number' ? latitude : -10.2450;
@@ -129,8 +173,8 @@ async function startServer() {
     }
   });
 
-  // Pexels Search API Proxy (BFF) - Keeps PEXELS_API_KEY securely on the server
-  app.get("/api/pexels/search", async (req, res) => {
+  // Pexels Search API Proxy (BFF) - Keeps PEXELS_API_KEY securely on the server (Rate limit: 30/min)
+  app.get("/api/pexels/search", pexelsRateLimiter, async (req, res) => {
     try {
       const query = (req.query.query as string || '').trim();
       const perPage = Math.min(Math.max(parseInt(req.query.per_page as string, 10) || 12, 1), 30);
@@ -210,8 +254,8 @@ async function startServer() {
     });
   });
 
-  // Análise Visual Multimodal Assíncrona de Desenho/Pintura por IA (Strava para Artistas)
-  app.post("/api/artworks/analyze-vision", async (req, res) => {
+  // Análise Visual Multimodal Assíncrona de Desenho/Pintura por IA (Strava para Artistas - Rate limit: 10/min)
+  app.post("/api/artworks/analyze-vision", visionRateLimiter, async (req, res) => {
     try {
       const { artworkId, imageUrl, userId, medium = "desenho/pintura" } = req.body;
 

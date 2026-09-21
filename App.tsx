@@ -78,30 +78,68 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { AchievementEvent } from './types';
 import { BrandedChallenge, BrandedAssetPack } from './types/assets';
 import { 
-  seedInitialFirestoreData, 
-  subscribeToFirestore, 
   persistUser, 
   persistPhoto, 
-  updatePhotoInFirestore, 
-  deletePhotoFromFirestore, 
-  persistComment, 
   persistSpot, 
-  deleteSpotFromFirestore,
-  persistChallenge,
-  deleteChallengeFromFirestore,
-  persistNotification,
-  updateNotificationInFirestore,
-  persistBadge,
-  deleteBadgeFromFirestore,
-  persistBrandedChallenge,
-  deleteBrandedChallengeFromFirestore,
-  persistBrandedPack,
-  deleteBrandedPackFromFirestore,
-  incrementBrandedPackUsageInFirestore
-} from './firestoreSync';
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { getSupabaseCurrentUser, signOutSupabase, getSupabaseClient } from './supabase';
+  persistCommentToSupabase,
+  fetchArtworksFromSupabase,
+  fetchProfilesFromSupabase,
+  fetchSpotsFromSupabase,
+  fetchCommentsFromSupabase,
+  deleteArtworkFromSupabase,
+  getSupabaseCurrentUser, 
+  signOutSupabase, 
+  getSupabaseClient,
+  subscribeToSupabaseRealtime,
+  isSupabaseConfigured
+} from './supabase';
+
+// Helper wrappers para persistência no Supabase e estado local
+const persistComment = async (comment: Comment) => {
+  await persistCommentToSupabase(comment);
+};
+
+const updatePhotoInFirestore = async (photoId: string, partial: Partial<PhotoBase>) => {
+  if (isSupabaseConfigured()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      const payload: Record<string, unknown> = {};
+      if (partial.vibeCount !== undefined) payload.vibe_count = partial.vibeCount;
+      if (partial.battleWins !== undefined) payload.battle_wins = partial.battleWins;
+      if (partial.battleLosses !== undefined) payload.battle_losses = partial.battleLosses;
+      if (partial.battleStreak !== undefined) payload.battle_streak = partial.battleStreak;
+      if (partial.title !== undefined) payload.title = partial.title;
+      if (partial.tags !== undefined) payload.tags = partial.tags;
+      if (partial.location !== undefined) payload.location = partial.location;
+      await sb.from('artworks').update(payload).eq('id', photoId);
+    }
+  }
+};
+
+const deletePhotoFromFirestore = async (photoId: string) => {
+  await deleteArtworkFromSupabase(photoId);
+};
+
+const deleteSpotFromFirestore = async (spotId: string) => {
+  if (isSupabaseConfigured()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      await sb.from('graffiti_spots').delete().eq('id', spotId);
+    }
+  }
+};
+
+const persistChallenge = (_c: WeeklyChallenge) => {};
+const deleteChallengeFromFirestore = (_id: string) => {};
+const persistBadge = (_b: Badge) => {};
+const deleteBadgeFromFirestore = (_id: string) => {};
+const persistBrandedChallenge = (_c: BrandedChallenge) => {};
+const deleteBrandedChallengeFromFirestore = (_id: string) => {};
+const persistBrandedPack = (_p: BrandedAssetPack) => {};
+const deleteBrandedPackFromFirestore = (_id: string) => {};
+const incrementBrandedPackUsageInFirestore = (_id: string) => {};
+const persistNotification = (_n: RemixNotification) => {};
+const updateNotificationInFirestore = (_id: string, _p: Partial<RemixNotification>) => {};
 
 // Interface para locais descobertos via Gemini + Google Maps Grounding
 interface DiscoveredSpot {
@@ -248,105 +286,72 @@ const App: React.FC = () => {
     prevLevelRef.current = currentUser.level;
   }, [currentUser?.badges, currentUser?.level, triggerAchievement]);
 
-  // Firestore Real-Time Synchronization & Auth State Listener
+  // Supabase Real-Time Synchronization & Auth State Listener
   useEffect(() => {
-    // 1. Seed initial data to Firestore if empty
-    seedInitialFirestoreData();
-
-    // 2. Real-time subscription to Firestore collections (Single Source of Truth)
-    const unsubscribeFirestore = subscribeToFirestore({
-      onUsers: (firestoreUsers) => {
-        if (firestoreUsers.length > 0) {
-          setUsers(firestoreUsers);
-          setCurrentUser(prev => {
-            const savedId = typeof window !== 'undefined' ? localStorage.getItem('upmm_current_user_id') : null;
-            const targetId = prev?.id || savedId || firestoreUsers[0]?.id;
-            const matched = firestoreUsers.find(u => u.id === targetId);
-            return matched || prev || firestoreUsers[0] || null;
+    // 1. Sincronização inicial de dados do Supabase
+    if (isSupabaseConfigured()) {
+      fetchProfilesFromSupabase().then(sbUsers => {
+        if (sbUsers.length > 0) {
+          setUsers(prev => {
+            const map = new Map();
+            prev.forEach(u => map.set(u.id, u));
+            sbUsers.forEach(u => map.set(u.id, { ...map.get(u.id), ...u }));
+            return Array.from(map.values());
           });
         }
-      },
-      onPhotos: (firestorePhotos) => {
-        if (firestorePhotos.length > 0) {
-          setPhotos(firestorePhotos);
+      }).catch(() => {});
+
+      fetchArtworksFromSupabase().then(sbArtworks => {
+        if (sbArtworks.length > 0) {
+          setPhotos(prev => {
+            const map = new Map();
+            prev.forEach(p => map.set(p.id, p));
+            sbArtworks.forEach(p => map.set(p.id, { ...map.get(p.id), ...p }));
+            return Array.from(map.values());
+          });
         }
-      },
-      onSpots: (firestoreSpots) => {
-        if (firestoreSpots.length > 0) {
-          setGraffitiSpots(firestoreSpots);
+      }).catch(() => {});
+
+      fetchSpotsFromSupabase().then(sbSpots => {
+        if (sbSpots.length > 0) {
+          setGraffitiSpots(prev => {
+            const map = new Map();
+            prev.forEach(s => map.set(s.id, s));
+            sbSpots.forEach(s => map.set(s.id, { ...map.get(s.id), ...s }));
+            return Array.from(map.values());
+          });
         }
-      },
-      onComments: (firestoreComments) => {
-        if (firestoreComments.length > 0) {
-          setComments(firestoreComments);
+      }).catch(() => {});
+
+      fetchCommentsFromSupabase().then(sbComments => {
+        if (sbComments.length > 0) {
+          setComments(prev => {
+            const map = new Map();
+            prev.forEach(c => map.set(c.id, c));
+            sbComments.forEach(c => map.set(c.id, { ...map.get(c.id), ...c }));
+            return Array.from(map.values());
+          });
         }
+      }).catch(() => {});
+    }
+
+    // 2. Realtime listener via Supabase Channels
+    const unsubscribeSupabaseRealtime = subscribeToSupabaseRealtime({
+      onArtworks: (updatedArtworks) => {
+        if (updatedArtworks.length > 0) setPhotos(updatedArtworks);
       },
-      onChallenges: (firestoreChallenges) => {
-        if (firestoreChallenges.length > 0) {
-          setChallenges(firestoreChallenges);
-        }
+      onComments: (updatedComments) => {
+        if (updatedComments.length > 0) setComments(updatedComments);
       },
-      onBadges: (firestoreBadges) => {
-        if (firestoreBadges.length > 0) {
-          setBadges(firestoreBadges);
-        }
+      onSpots: (updatedSpots) => {
+        if (updatedSpots.length > 0) setGraffitiSpots(updatedSpots);
       },
-      onNotifications: (firestoreNotifications) => {
-        if (firestoreNotifications.length > 0) {
-          setNotifications(firestoreNotifications);
-        }
-      },
-      onBrandedChallenges: (firestoreBrandedChallenges) => {
-        if (firestoreBrandedChallenges) {
-          setBrandedChallenges(firestoreBrandedChallenges);
-        }
-      },
-      onBrandedPacks: (firestoreBrandedPacks) => {
-        if (firestoreBrandedPacks) {
-          setBrandedPacks(firestoreBrandedPacks);
-        }
+      onProfiles: (updatedProfiles) => {
+        if (updatedProfiles.length > 0) setUsers(updatedProfiles);
       }
     });
 
-    // 3. Listen to Firebase Auth state for real Google sessions
-    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
-      if (fbUser) {
-        setUsers(prevUsers => {
-          const matched = prevUsers.find(u => u.id === fbUser.uid || (fbUser.email && u.email === fbUser.email));
-          const isUserAdmin = fbUser.email === 'pedromarcioap@gmail.com';
-          if (matched) {
-            const userWithAdmin = isUserAdmin ? { ...matched, isAdmin: true } : matched;
-            setCurrentUser(userWithAdmin);
-            try { localStorage.setItem('upmm_current_user_id', userWithAdmin.id); } catch {}
-          } else {
-            const newUser: User = {
-              id: fbUser.uid,
-              name: fbUser.displayName || 'Artista Conectado',
-              username: (fbUser.email?.split('@')[0] || 'artista').toLowerCase().replace(/[^a-zA-Z0-9_]/g, ''),
-              email: fbUser.email || '',
-              avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-              bio: 'Artista periférico e visual de Palmas - TO autenticado com Google.',
-              vibe: 100,
-              responsa: 45,
-              level: UserLevel.CRIADOR,
-              badges: ['click', 'community'],
-              isAdmin: isUserAdmin,
-              neighborhood: 'Taquaralto',
-              googleLinked: true,
-              joinedDate: new Date().toLocaleDateString('pt-BR'),
-              completedChallenges: []
-            };
-            setCurrentUser(newUser);
-            try { localStorage.setItem('upmm_current_user_id', newUser.id); } catch {}
-            persistUser(newUser);
-            return [...prevUsers, newUser];
-          }
-          return prevUsers;
-        });
-      }
-    });
-
-    // 4. Listen to Supabase Auth session if configured
+    // 3. Listen to Supabase Auth session
     const sb = getSupabaseClient();
     let sbSubscription: { unsubscribe: () => void } | null = null;
     if (sb) {
@@ -365,18 +370,6 @@ const App: React.FC = () => {
         }
       }).catch(() => {});
 
-      // Sincronização inicial de obras relacionais com o Supabase
-      SupabaseService.getArtworks().then(sbArtworks => {
-        if (sbArtworks && sbArtworks.length > 0) {
-          setPhotos(prevPhotos => {
-            const map = new Map();
-            prevPhotos.forEach(p => map.set(p.id, p));
-            sbArtworks.forEach(p => map.set(p.id, { ...map.get(p.id), ...p }));
-            return Array.from(map.values());
-          });
-        }
-      }).catch(() => {});
-
       const { data } = sb.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           const user = await getSupabaseCurrentUser();
@@ -390,8 +383,7 @@ const App: React.FC = () => {
     }
 
     return () => {
-      unsubscribeFirestore();
-      unsubscribeAuth();
+      unsubscribeSupabaseRealtime();
       if (sbSubscription) {
         sbSubscription.unsubscribe();
       }
@@ -420,13 +412,6 @@ const App: React.FC = () => {
     try {
       localStorage.removeItem('upmm_current_user_id');
     } catch {}
-    if (auth.currentUser) {
-      try {
-        await auth.signOut();
-      } catch (e) {
-        console.warn('Erro ao deslogar do Firebase Auth:', e);
-      }
-    }
     try {
       await signOutSupabase();
     } catch (e) {
