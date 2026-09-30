@@ -800,11 +800,24 @@ export const BattleRanking: React.FC<BattleRankingProps> = ({
 
   const top3 = filteredRankedPhotos.slice(0, 3);
 
+<<<<<<< HEAD
   const handleClearFilters = () => {
     setSearchQuery('');
     setSelectedNeighborhood('all');
     setActiveTab('all');
   };
+=======
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(p => 
+        p.title.toLowerCase().includes(q) ||
+        p.authorName.toLowerCase().includes(q) ||
+        (p.location?.neighborhood && p.location.neighborhood.toLowerCase().includes(q)) ||
+        (p.tags || []).some(t => t.toLowerCase().includes(q))
+      );
+    }
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
 
   let content: React.ReactNode;
   if (activeTab === 'podium') {

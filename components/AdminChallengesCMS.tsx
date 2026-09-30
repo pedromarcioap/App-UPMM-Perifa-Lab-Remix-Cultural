@@ -284,7 +284,7 @@ export const AdminChallengesCMS: React.FC<AdminChallengesCMSProps> = ({
   const targetWinnerChallenge = challenges.find(c => c.id === selectedChallengeForWinner) || challenges[0];
   const entriesForTargetChallenge = photos.filter(p => 
     p.challengeId === targetWinnerChallenge?.id ||
-    targetWinnerChallenge?.tags.some(t => p.tags.includes(t)) ||
+    (targetWinnerChallenge?.tags || []).some(t => (p.tags || []).includes(t)) ||
     (targetWinnerChallenge?.featuredNeighborhood && p.location?.neighborhood?.toLowerCase().includes(targetWinnerChallenge.featuredNeighborhood.toLowerCase()))
   );
 
@@ -473,7 +473,7 @@ export const AdminChallengesCMS: React.FC<AdminChallengesCMSProps> = ({
             {filteredChallenges.map(challenge => {
               const entriesCount = photos.filter(p => 
                 p.challengeId === challenge.id ||
-                challenge.tags.some(t => p.tags.includes(t)) ||
+                (challenge.tags || []).some(t => (p.tags || []).includes(t)) ||
                 (challenge.featuredNeighborhood && p.location?.neighborhood?.toLowerCase().includes(challenge.featuredNeighborhood.toLowerCase()))
               ).length;
 

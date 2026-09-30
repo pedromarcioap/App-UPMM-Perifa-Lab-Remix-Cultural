@@ -32,10 +32,23 @@ import {
   Maximize2,
   Eye,
   Tag,
+<<<<<<< HEAD
   Compass
 } from 'lucide-react';
 import { INITIAL_USERS, INITIAL_PHOTOS, INITIAL_GRAFFITI_SPOTS, INITIAL_COMMENTS, INITIAL_WEEKLY_CHALLENGES, BADGES } from './constants';
 import { User, PhotoBase, UserLevel, GraffitiSpot, Comment, WeeklyChallenge, RemixNotification, Badge, AchievementEvent } from './types';
+=======
+  Bell,
+  Compass,
+  Plus,
+  Upload,
+  Database
+} from 'lucide-react';
+import { compressAndOptimizeImage } from './imageProcessor';
+import { UPMMBrandLogo, UPMMGlyph } from './components/UPMMBrandLogo';
+import { INITIAL_USERS, INITIAL_PHOTOS, INITIAL_GRAFFITI_SPOTS, INITIAL_COMMENTS, INITIAL_WEEKLY_CHALLENGES, COLORS, BADGES, PRESET_TAGS } from './constants';
+import { User, PhotoBase, UserLevel, GraffitiSpot, Comment, WeeklyChallenge, RemixNotification, Badge, ArtworkAnalysis } from './types';
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
 import Editor from './components/Editor';
 import { ExploreHub } from './components/ExploreHub';
 import { PalmasRealMap } from './components/PalmasRealMap';
@@ -46,6 +59,9 @@ import { AdminChallengesCMS } from './components/AdminChallengesCMS';
 import { BadgeCMS } from './components/BadgeCMS';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { AuthModal } from './components/AuthModal';
+import { SupabaseSyncModal } from './components/SupabaseSyncModal';
+import { SupabaseService } from './services/supabaseService';
+import { ArtworkAnalysisBadge } from './components/ArtworkAnalysisBadge';
 import { CommunitySpotlight } from './components/CommunitySpotlight';
 import { AchievementCelebration } from './components/AchievementCelebration';
 import { RemixPodium } from './components/RemixPodium';
@@ -59,6 +75,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { StudioRemixHub } from './components/StudioRemixHub';
 import { NotFound } from './components/NotFound';
 import { BrandedChallenge, BrandedAssetPack } from './types/assets';
+<<<<<<< HEAD
 import {
   seedInitialSupabaseData,
   subscribeToSupabase,
@@ -82,6 +99,71 @@ import {
   incrementBrandedPackUsageInSupabase as incrementBrandedPackUsageInFirestore
 } from './supabaseSync';
 import { getSupabaseCurrentUser, signOutSupabase, getSupabaseClient } from './supabase';
+=======
+import { 
+  persistUser, 
+  persistPhoto, 
+  persistSpot, 
+  persistCommentToSupabase,
+  fetchArtworksFromSupabase,
+  fetchProfilesFromSupabase,
+  fetchSpotsFromSupabase,
+  fetchCommentsFromSupabase,
+  deleteArtworkFromSupabase,
+  getSupabaseCurrentUser, 
+  signOutSupabase, 
+  getSupabaseClient,
+  subscribeToSupabaseRealtime,
+  isSupabaseConfigured
+} from './supabase';
+
+// Helper wrappers para persistência no Supabase e estado local
+const persistComment = async (comment: Comment) => {
+  await persistCommentToSupabase(comment);
+};
+
+const updatePhotoInFirestore = async (photoId: string, partial: Partial<PhotoBase>) => {
+  if (isSupabaseConfigured()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      const payload: Record<string, unknown> = {};
+      if (partial.vibeCount !== undefined) payload.vibe_count = partial.vibeCount;
+      if (partial.battleWins !== undefined) payload.battle_wins = partial.battleWins;
+      if (partial.battleLosses !== undefined) payload.battle_losses = partial.battleLosses;
+      if (partial.battleStreak !== undefined) payload.battle_streak = partial.battleStreak;
+      if (partial.title !== undefined) payload.title = partial.title;
+      if (partial.tags !== undefined) payload.tags = partial.tags;
+      if (partial.location !== undefined) payload.location = partial.location;
+      await sb.from('artworks').update(payload).eq('id', photoId);
+    }
+  }
+};
+
+const deletePhotoFromFirestore = async (photoId: string) => {
+  await deleteArtworkFromSupabase(photoId);
+};
+
+const deleteSpotFromFirestore = async (spotId: string) => {
+  if (isSupabaseConfigured()) {
+    const sb = getSupabaseClient();
+    if (sb) {
+      await sb.from('graffiti_spots').delete().eq('id', spotId);
+    }
+  }
+};
+
+const persistChallenge = (_c: WeeklyChallenge) => {};
+const deleteChallengeFromFirestore = (_id: string) => {};
+const persistBadge = (_b: Badge) => {};
+const deleteBadgeFromFirestore = (_id: string) => {};
+const persistBrandedChallenge = (_c: BrandedChallenge) => {};
+const deleteBrandedChallengeFromFirestore = (_id: string) => {};
+const persistBrandedPack = (_p: BrandedAssetPack) => {};
+const deleteBrandedPackFromFirestore = (_id: string) => {};
+const incrementBrandedPackUsageInFirestore = (_id: string) => {};
+const persistNotification = (_n: RemixNotification) => {};
+const updateNotificationInFirestore = (_id: string, _p: Partial<RemixNotification>) => {};
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
 
 
 // Interface para locais descobertos via Gemini + Google Maps Grounding
@@ -93,6 +175,7 @@ interface DiscoveredSpot {
   description: string;
 }
 
+<<<<<<< HEAD
 /**
  * Gera um número pseudoaleatório criptograficamente seguro no intervalo [0, 1).
  * Utiliza exclusivamente a Web Crypto API (crypto.getRandomValues), sem recorrer
@@ -460,6 +543,54 @@ const useSupabaseSync = (setters: {
     setBrandedPacks
   } = setters;
 
+=======
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(INITIAL_USERS[0] || null);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [photos, setPhotos] = useState<PhotoBase[]>(INITIAL_PHOTOS);
+  const [graffitiSpots, setGraffitiSpots] = useState<GraffitiSpot[]>(INITIAL_GRAFFITI_SPOTS);
+  const [comments, setComments] = useState<Comment[]>(INITIAL_COMMENTS);
+  const [activeCommentTarget, setActiveCommentTarget] = useState<{
+    targetId: string;
+    targetType: 'photo' | 'spot';
+    title: string;
+    subtitle?: string;
+    image?: string;
+    badge?: string;
+  } | null>(null);
+  const [challenges, setChallenges] = useState<WeeklyChallenge[]>(INITIAL_WEEKLY_CHALLENGES);
+  const [badges, setBadges] = useState<Badge[]>(BADGES);
+  const [brandedChallenges, setBrandedChallenges] = useState<BrandedChallenge[]>([]);
+  const [brandedPacks, setBrandedPacks] = useState<BrandedAssetPack[]>([]);
+  const [selectedChallengeForUpload, setSelectedChallengeForUpload] = useState<WeeklyChallenge | null>(null);
+  const [notifications, setNotifications] = useState<RemixNotification[]>([]);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
+  const [authModalReason, setAuthModalReason] = useState<string | null>(null);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isAdminDemoMode, setIsAdminDemoMode] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hydrate user and admin preferences from localStorage post-mount
+  useEffect(() => {
+    try {
+      const savedId = localStorage.getItem('upmm_current_user_id');
+      if (savedId) {
+        const found = INITIAL_USERS.find(u => u.id === savedId);
+        if (found) setCurrentUser(found);
+      }
+      const savedAdmin = localStorage.getItem('upmm_admin_mode') === 'true';
+      if (savedAdmin) setIsAdminDemoMode(true);
+    } catch {}
+  }, []);
+
+  // Global Universal Search Shortcut (⌘K / Ctrl+K)
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   useEffect(() => {
     // 1. Popular dados iniciais no Supabase se as tabelas estiverem vazias
     void seedInitialSupabaseData();
@@ -580,6 +711,7 @@ const useAchievementObserver = (
   }, [currentUser, detectNewBadge, detectLevelUp]);
 };
 
+<<<<<<< HEAD
 /** Constrói o evento de celebração para uma arte remixada por outro artista. */
 const buildRemixSimulationAchievement = (remixerName: string, baseTitle: string): AchievementEvent => ({
   id: `remix_event_${Date.now()}`,
@@ -603,9 +735,131 @@ const buildBadgeAchievement = (newBadgeId: string): AchievementEvent => {
     description: badgeDef ? badgeDef.description : 'Você conquistou uma nova insígnia na cena periférica de Palmas!',
     rewardResponsa: 25,
     badgeId: newBadgeId
+=======
+  // Supabase Real-Time Synchronization & Auth State Listener
+  useEffect(() => {
+    // 1. Sincronização inicial de dados do Supabase
+    if (isSupabaseConfigured()) {
+      fetchProfilesFromSupabase().then(sbUsers => {
+        if (sbUsers.length > 0) {
+          setUsers(prev => {
+            const map = new Map();
+            prev.forEach(u => map.set(u.id, u));
+            sbUsers.forEach(u => map.set(u.id, { ...map.get(u.id), ...u }));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      fetchArtworksFromSupabase().then(sbArtworks => {
+        if (sbArtworks.length > 0) {
+          setPhotos(prev => {
+            const map = new Map();
+            prev.forEach(p => map.set(p.id, p));
+            sbArtworks.forEach(p => map.set(p.id, { ...map.get(p.id), ...p }));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      fetchSpotsFromSupabase().then(sbSpots => {
+        if (sbSpots.length > 0) {
+          setGraffitiSpots(prev => {
+            const map = new Map();
+            prev.forEach(s => map.set(s.id, s));
+            sbSpots.forEach(s => map.set(s.id, { ...map.get(s.id), ...s }));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      fetchCommentsFromSupabase().then(sbComments => {
+        if (sbComments.length > 0) {
+          setComments(prev => {
+            const map = new Map();
+            prev.forEach(c => map.set(c.id, c));
+            sbComments.forEach(c => map.set(c.id, { ...map.get(c.id), ...c }));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+    }
+
+    // 2. Realtime listener via Supabase Channels
+    const unsubscribeSupabaseRealtime = subscribeToSupabaseRealtime({
+      onArtworks: (updatedArtworks) => {
+        if (updatedArtworks.length > 0) setPhotos(updatedArtworks);
+      },
+      onComments: (updatedComments) => {
+        if (updatedComments.length > 0) setComments(updatedComments);
+      },
+      onSpots: (updatedSpots) => {
+        if (updatedSpots.length > 0) setGraffitiSpots(updatedSpots);
+      },
+      onProfiles: (updatedProfiles) => {
+        if (updatedProfiles.length > 0) setUsers(updatedProfiles);
+      }
+    });
+
+    // 3. Listen to Supabase Auth session
+    const sb = getSupabaseClient();
+    let sbSubscription: { unsubscribe: () => void } | null = null;
+    if (sb) {
+      getSupabaseCurrentUser().then(sbUser => {
+        if (sbUser) {
+          setUsers(prevUsers => {
+            const matched = prevUsers.find(u => u.id === sbUser.id || (sbUser.email && u.email === sbUser.email));
+            if (matched) {
+              setCurrentUser(matched);
+            } else {
+              setCurrentUser(sbUser);
+              return [...prevUsers, sbUser];
+            }
+            return prevUsers;
+          });
+        }
+      }).catch(() => {});
+
+      const { data } = sb.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const user = await getSupabaseCurrentUser();
+          if (user) {
+            setCurrentUser(user);
+            try { localStorage.setItem('upmm_current_user_id', user.id); } catch {}
+          }
+        }
+      });
+      sbSubscription = data?.subscription || null;
+    }
+
+    return () => {
+      unsubscribeSupabaseRealtime();
+      if (sbSubscription) {
+        sbSubscription.unsubscribe();
+      }
+    };
+  }, []);
+
+  const handleSelectUser = (userOrId: string | User) => {
+    let target: User | undefined;
+    if (typeof userOrId === 'string') {
+      target = users.find(u => u.id === userOrId) || INITIAL_USERS.find(u => u.id === userOrId);
+    } else {
+      target = userOrId;
+    }
+    if (target) {
+      setCurrentUser(target);
+      try {
+        localStorage.setItem('upmm_current_user_id', target.id);
+      } catch {}
+    }
+    setIsLoginModalOpen(false);
+    setAuthModalReason(null);
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   };
 };
 
+<<<<<<< HEAD
 /** Constrói o evento de celebração para uma subida de nível. */
 const buildLevelUpAchievement = (level: UserLevel): AchievementEvent => ({
   id: `level_${level}_${Date.now()}`,
@@ -631,6 +885,101 @@ const useRemixNotifications = (
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>,
   setUsers: React.Dispatch<React.SetStateAction<User[]>>
 ) => {
+=======
+  const handleLogout = async () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('upmm_current_user_id');
+    } catch {}
+    try {
+      await signOutSupabase();
+    } catch (e) {
+      console.warn('Erro ao deslogar do Supabase:', e);
+    }
+  };
+
+  const openAuthModal = (tab: 'login' | 'register' = 'login', reason: string | null = null) => {
+    setAuthModalTab(tab);
+    setAuthModalReason(reason);
+    setIsLoginModalOpen(true);
+  };
+
+  const handleAddComment = (targetId: string, targetType: 'photo' | 'spot', text: string) => {
+    if (!currentUser) {
+      openAuthModal('login', 'Para comentar nas fotos e murais da quebrada, conecte-se.');
+      return;
+    }
+
+    const newComment: Comment = {
+      id: `comm_${Date.now()}`,
+      targetId,
+      targetType,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      text,
+      createdAt: Date.now(),
+      likes: 0
+    };
+
+    setComments(prev => [newComment, ...prev]);
+    persistComment(newComment);
+    SupabaseService.syncComment(newComment).catch(() => {});
+
+    // Reward commenting with +3 Responsa and Community badge
+    const updatedResponsa = currentUser.responsa + 3;
+    const updatedBadges = Array.from(new Set([...currentUser.badges, 'community']));
+    const updatedUser: User = {
+      ...currentUser,
+      responsa: updatedResponsa,
+      badges: updatedBadges,
+      level: updatedResponsa >= 80 ? UserLevel.ATIVISTA : (updatedResponsa >= 30 ? UserLevel.CRIADOR : UserLevel.OBSERVADOR)
+    };
+
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    persistUser(updatedUser);
+  };
+
+  const openCommentsForPhoto = (photo: PhotoBase) => {
+    setActiveCommentTarget({
+      targetId: photo.id,
+      targetType: 'photo',
+      title: photo.title,
+      subtitle: `por @${photo.authorName} • ${photo.location?.neighborhood || 'Palmas, TO'}`,
+      image: photo.imageUrl,
+      badge: photo.type === 'remix' ? 'Remix' : 'Foto Base'
+    });
+  };
+
+  const openCommentsForSpot = (spot: GraffitiSpot) => {
+    setActiveCommentTarget({
+      targetId: spot.id,
+      targetType: 'spot',
+      title: spot.title,
+      subtitle: `${spot.neighborhood || 'Palmas, TO'} • Mapeado por @${spot.userName}`,
+      badge: spot.type === 'permitido' ? 'Muro Permitido' : 'Muro Sugerido'
+    });
+  };
+
+  const handleOpenComments = (targetId: string, targetType: 'photo' | 'spot') => {
+    if (targetType === 'photo') {
+      const photo = photos.find(p => p.id === targetId);
+      if (photo) {
+        openCommentsForPhoto(photo);
+        return;
+      }
+    } else {
+      const spot = graffitiSpots.find(s => s.id === targetId);
+      if (spot) {
+        openCommentsForSpot(spot);
+        return;
+      }
+    }
+  };
+
+  // Compute remix notifications for the current user (from Firestore notifications and discovered from remixes)
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   const currentUserRemixNotifications = useMemo(() => {
     if (!currentUser) return [];
 
@@ -738,6 +1087,7 @@ const useAppCmsActions = ({
     rewardChallengeWinner(winnerPhoto, targetChallenge, users, setUsers, setCurrentUser, currentUser?.id);
   };
 
+<<<<<<< HEAD
   const handleSaveBadge = (badge: Badge) => {
     setBadges(prev => upsertById(prev, badge));
     void persistBadge(badge);
@@ -780,6 +1130,17 @@ const useAppCmsActions = ({
         void persistBrandedChallenge(updated);
       }
       return prev.map(c => c.id === id ? { ...c, active } : c);
+=======
+    // Disparar celebração festiva com link para a árvore de linhagem
+    triggerAchievement({
+      id: `remix_event_${Date.now()}`,
+      type: 'level_up',
+      title: 'Sua Arte foi Remixada!',
+      subtitle: `@${randomRemixerName} criou um remix da sua foto`,
+      icon: '🔔',
+      description: `"${targetBase.title}" acaba de ganhar uma nova ramificação na árvore de linhagem coletiva de Palmas!`,
+      rewardResponsa: 20
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
     });
   };
 
@@ -1182,17 +1543,39 @@ const useAppCommunityActions = ({
     void deleteSpotFromFirestore(spotId);
   };
 
-  const handleOpenUploadForChallenge = (challenge: WeeklyChallenge) => {
-    setSelectedChallengeForUpload(challenge);
+  const handleOpenUpload = (challenge?: WeeklyChallenge | null) => {
+    if (!currentUser) {
+      setAuthModalReason('Faça login ou selecione seu perfil de artista para registrar e publicar fotos autorais de Palmas!');
+      setAuthModalTab('login');
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setSelectedChallengeForUpload(challenge || null);
     setIsUploadModalOpen(true);
   };
 
+<<<<<<< HEAD
   const handleChallengeUploadRequest = (challenge: WeeklyChallenge) => {
     if (!currentUser) {
       openAuthModal('login');
       return;
     }
     handleOpenUploadForChallenge(challenge);
+=======
+  const handleOpenUploadForChallenge = (challenge: WeeklyChallenge) => {
+    handleOpenUpload(challenge);
+  };
+
+  const handleSaveChallenge = (challenge: WeeklyChallenge) => {
+    setChallenges(prev => {
+      const exists = prev.some(c => c.id === challenge.id);
+      if (exists) {
+        return prev.map(c => c.id === challenge.id ? challenge : c);
+      }
+      return [challenge, ...prev];
+    });
+    persistChallenge(challenge);
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   };
 
   return {
@@ -1925,6 +2308,7 @@ const App: React.FC = () => {
 
       {/* Barra de Cabeçalho Fixa no Topo para Celulares & Mobile Native Shell (oculta na rota do editor de remix para liberar 100% da tela) */}
       {!isEditorRoute && (
+<<<<<<< HEAD
         <AppMobileHeader
           currentUser={currentUser}
           unreadRemixCount={unreadRemixCount}
@@ -1953,6 +2337,358 @@ const App: React.FC = () => {
           <Route path="/" element={<Feed photos={photos} onLike={handleLike} onShare={handleShare} currentUser={currentUser} onRequireLogin={handleRequireLogin} comments={comments} onOpenComments={openCommentsForPhoto} users={users} isAdmin={isAdmin} />} />
           <Route
             path="/challenges"
+=======
+        <header className="lg:hidden sticky top-0 z-30 bg-[#11100F]/95 backdrop-blur-md border-b border-[#36322D] px-3.5 py-2 flex items-center justify-between text-white shadow-sm">
+          <Link to="/" className="flex items-center" title="U.P.M.M // Periferia Mural & Movimento">
+            <UPMMBrandLogo variant="mobile" />
+          </Link>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsSupabaseModalOpen(true)}
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] text-emerald-400 rounded-xl border border-[#3E3A35] transition"
+              title="Status Supabase & IA"
+              aria-label="Supabase & IA"
+            >
+              <Database size={18} />
+            </button>
+
+            <button
+              onClick={() => setIsUniversalSearchOpen(true)}
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] text-[#FFB800] rounded-xl border border-[#3E3A35] transition"
+              title="Buscar Obras, Muros e Artistas (⌘K)"
+              aria-label="Buscar"
+            >
+              <Search size={18} />
+            </button>
+
+            {currentUser ? (
+              <Link
+                to={`/profile/${currentUser.id}`}
+                className="relative p-1 rounded-full border border-[#3E3A35] bg-[#242220] min-w-[44px] min-h-[44px] flex items-center justify-center"
+                title="Meu Perfil"
+              >
+                {currentUser.avatar ? (
+                  <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 rounded-full object-cover" />
+                ) : (
+                  <UserIcon size={18} className="text-[#FFB800]" />
+                )}
+                {unreadRemixCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF5722] text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                    {unreadRemixCount}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <button
+                onClick={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                className="px-3 py-1.5 min-h-[44px] bg-[#FFB800] text-[#141311] rounded-xl font-black text-xs uppercase flex items-center gap-1 shadow-sm"
+              >
+                <LogIn size={14} />
+                <span>Entrar</span>
+              </button>
+            )}
+            {isAdmin && (
+              <Link
+                to="/curadoria"
+                className="text-[9px] font-black uppercase px-2 py-1 rounded-xl bg-amber-500/20 text-[#FFB800] border border-[#FFB800]/30 flex items-center gap-1"
+              >
+                <ShieldCheck size={11} />
+                <span className="hidden sm:inline">Curador</span>
+              </Link>
+            )}
+          </div>
+        </header>
+      )}
+
+      {/* Barra Lateral Brutalista Editorial Fixa (Desktop) */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-[#141311] border-r border-[#3E3A35] text-white p-5 z-50 overflow-y-auto no-scrollbar">
+        {/* Brand Logo & Editorial Header */}
+        <div className="mb-6">
+          <Link to="/" className="block group" title="U.P.M.M // Periferia Mural & Movimento">
+            <UPMMBrandLogo variant="sidebar" />
+          </Link>
+
+          {/* Quick Universal Search Trigger (⌘K) */}
+          <button
+            onClick={() => setIsUniversalSearchOpen(true)}
+            className="mt-4 w-full flex items-center justify-between px-3 py-2 bg-[#1C1B19] hover:bg-[#242220] border border-[#3E3A35] hover:border-[#FFB800] rounded-xl text-xs text-[#EDE8E1]/70 transition group cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <Search size={14} className="text-[#FFB800]" />
+              <span className="font-medium">Busca Universal</span>
+            </span>
+            <span className="text-[9px] font-mono uppercase bg-[#242220] px-1.5 py-0.5 rounded text-[#EDE8E1]/60 group-hover:text-white border border-[#3E3A35]">
+              ⌘K
+            </span>
+          </button>
+        </div>
+
+        {/* Botão de Ação Rápida no Desktop: Lançar Nova Foto / Visão */}
+        <div className="mb-3 px-1">
+          <button
+            type="button"
+            onClick={() => handleOpenUpload()}
+            className="w-full min-h-[44px] py-2.5 px-3.5 bg-gradient-to-r from-[#FFB800] to-[#EAB308] hover:from-[#EAB308] hover:to-[#CA8A04] text-[#141311] rounded-xl font-black text-xs uppercase flex items-center justify-between shadow-md active:scale-95 transition cursor-pointer"
+            title="Tirar ou Subir Foto Real de Palmas"
+          >
+            <div className="flex items-center gap-2">
+              <Camera size={16} />
+              <span>Publicar Foto</span>
+            </div>
+            <Plus size={16} strokeWidth={3} />
+          </button>
+        </div>
+
+        {/* 5 Canonical Modules Navigation */}
+        <nav className="space-y-1.5 flex-1 text-xs">
+          <div className="text-[9px] font-mono font-bold uppercase text-[#EDE8E1]/40 px-2 pt-1 pb-1">
+            Módulos Centrais
+          </div>
+
+          {/* [01] O FLUXO */}
+          <Link 
+            to="/" 
+            className={`flex items-center justify-between p-2.5 rounded-xl transition ${
+              location.pathname === '/' 
+                ? 'bg-[#FFB800] text-[#141311] font-bold shadow' 
+                : 'text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white'
+            }`}
+          >
+            <div className="flex items-center space-x-2.5">
+              <span className="font-mono text-[10px] opacity-70">[01]</span>
+              <span className="font-bold tracking-tight">O Fluxo</span>
+            </div>
+            <Home size={15} />
+          </Link>
+
+          {/* [02] ARENA & PÓDIO */}
+          <Link 
+            to="/battle" 
+            className={`flex items-center justify-between p-2.5 rounded-xl transition ${
+              location.pathname === '/battle' || location.pathname === '/ranking' || location.pathname === '/podium-remixes'
+                ? 'bg-[#FFB800] text-[#141311] font-bold shadow' 
+                : 'text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white'
+            }`}
+          >
+            <div className="flex items-center space-x-2.5">
+              <span className="font-mono text-[10px] opacity-70">[02]</span>
+              <span className="font-bold tracking-tight">Arena & Pódio</span>
+            </div>
+            <Sword size={15} className="text-[#FF5722]" />
+          </Link>
+
+          {/* [03] STUDIO REMIX */}
+          <Link 
+            to={photos.length > 0 ? `/remix/${photos[0].id}` : '/remix'} 
+            className={`flex items-center justify-between p-2.5 rounded-xl transition ${
+              location.pathname.startsWith('/remix')
+                ? 'bg-[#FFB800] text-[#141311] font-bold shadow' 
+                : 'text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white'
+            }`}
+          >
+            <div className="flex items-center space-x-2.5">
+              <span className="font-mono text-[10px] opacity-70">[03]</span>
+              <span className="font-bold tracking-tight">Studio Remix</span>
+            </div>
+            <Sparkles size={15} className="text-[#00E5FF]" />
+          </Link>
+
+          {/* [04] PERFIL & WALLET */}
+          {currentUser ? (
+            <Link 
+              to={`/profile/${currentUser.id}`} 
+              className={`flex items-center justify-between p-2.5 rounded-xl transition ${
+                location.pathname.startsWith('/profile')
+                  ? 'bg-[#FFB800] text-[#141311] font-bold shadow' 
+                  : 'text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <span className="font-mono text-[10px] opacity-70">[04]</span>
+                <span className="font-bold tracking-tight">Perfil & Wallet</span>
+              </div>
+              {unreadRemixCount > 0 ? (
+                <span className="w-2 h-2 bg-[#FF5722] rounded-full animate-ping" />
+              ) : (
+                <UserIcon size={15} />
+              )}
+            </Link>
+          ) : (
+            <button
+              onClick={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition text-left"
+            >
+              <div className="flex items-center space-x-2.5">
+                <span className="font-mono text-[10px] opacity-70">[04]</span>
+                <span className="font-bold tracking-tight">Perfil & Wallet</span>
+              </div>
+              <LogIn size={15} />
+            </button>
+          )}
+
+          {/* [05] CURADORIA POPULAR & CMS (Visível estritamente para Administradores / Curadores) */}
+          {isAdmin && (
+            <Link 
+              to="/curadoria" 
+              className={`flex items-center justify-between p-2.5 rounded-xl transition ${
+                location.pathname === '/curadoria' || location.pathname.startsWith('/admin')
+                  ? 'bg-[#FFB800] text-[#141311] font-bold shadow' 
+                  : 'text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <span className="font-mono text-[10px] opacity-70">[05]</span>
+                <span className="font-bold tracking-tight">Curadoria & CMS</span>
+              </div>
+              <ShieldCheck size={15} className="text-[#43A047]" />
+            </Link>
+          )}
+
+          {/* Seção Territorial & Desafios */}
+          <div className="text-[9px] font-mono font-bold uppercase text-[#EDE8E1]/40 px-2 pt-3 pb-1">
+            Território & Fomento
+          </div>
+
+          <Link to="/explore" className="flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition">
+            <div className="flex items-center space-x-2.5">
+              <Compass size={14} className="text-[#FFB800]" />
+              <span>Explorar Hub</span>
+            </div>
+          </Link>
+
+          <Link to="/challenges" className="flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition">
+            <div className="flex items-center space-x-2.5">
+              <Flame size={14} className="text-[#FF5722]" />
+              <span>Editais & Desafios</span>
+            </div>
+            <span className="text-[8px] bg-[#FF5722] text-white px-1.5 py-0.2 rounded font-mono font-bold">
+              B2B
+            </span>
+          </Link>
+
+          <Link to="/map" className="flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition">
+            <div className="flex items-center space-x-2.5">
+              <MapIcon size={14} className="text-[#00E5FF]" />
+              <span>Mapa da Visão</span>
+            </div>
+          </Link>
+
+          <Link to="/podium-remixes" className="flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition">
+            <div className="flex items-center space-x-2.5">
+              <Crown size={14} className="text-[#FFB800]" />
+              <span>Pódio de Remixes</span>
+            </div>
+          </Link>
+
+          <button 
+            onClick={() => setIsSupabaseModalOpen(true)}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl text-[#EDE8E1]/80 hover:bg-[#1C1B19] hover:text-white transition cursor-pointer"
+            title="Diagnóstico Supabase, PostgreSQL e IA"
+          >
+            <div className="flex items-center space-x-2.5">
+              <Database size={14} className="text-emerald-400" />
+              <span>Supabase & IA</span>
+            </div>
+            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
+              SYNC
+            </span>
+          </button>
+        </nav>
+
+        {/* User Info & Switcher Footer */}
+        <div className="pt-4 border-t border-[#3E3A35] space-y-3">
+          {currentUser ? (
+            <div className="space-y-2">
+              <Link 
+                to={`/profile/${currentUser.id}`}
+                className="flex items-center space-x-2.5 p-2 rounded-xl bg-[#1C1B19] hover:bg-[#242220] border border-[#3E3A35] hover:border-[#FFB800] transition group cursor-pointer block"
+                title="Ver Meu Perfil e Carteira de Responsa"
+              >
+                <img 
+                  src={currentUser.avatar} 
+                  alt={currentUser.name} 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80';
+                  }}
+                  className="w-9 h-9 rounded-full object-cover border border-[#FFB800] shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold truncate text-white group-hover:text-[#FFB800] transition">{currentUser.name}</p>
+                    <span className="text-[9px] font-black text-[#FFB800] bg-[#141311] px-1.5 py-0.2 rounded border border-[#3E3A35]">
+                      {currentUser.responsa || 0} pts
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-zinc-400 font-mono uppercase truncate">{currentUser.neighborhood || 'Palmas - TO'}</p>
+                </div>
+              </Link>
+
+              <div className="flex items-center justify-between pt-1 px-1">
+                <button 
+                  type="button"
+                  onClick={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                  className="flex items-center space-x-1.5 text-zinc-400 hover:text-white transition text-left text-[11px] font-bold"
+                >
+                  <UserIcon size={12} className="text-[#FFB800]" /> <span>Entrar em Outro Perfil</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleLogout} 
+                  className="flex items-center space-x-1.5 text-red-400 hover:text-red-300 transition text-left text-[11px] font-bold cursor-pointer"
+                >
+                  <LogOut size={12} /> <span>Sair</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <button 
+                type="button"
+                onClick={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }} 
+                className="w-full py-2.5 bg-[#FFB800] hover:bg-[#FFA000] text-[#141311] rounded-xl font-bold text-xs uppercase tracking-wider shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LogIn size={14} />
+                <span>Entrar no Perfil</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => { setAuthModalTab('register'); setIsLoginModalOpen(true); }} 
+                className="w-full py-1.5 text-[#EDE8E1]/70 hover:text-white text-[10px] font-bold uppercase transition block text-center"
+              >
+                + Criar Perfil de Artista
+              </button>
+            </div>
+          )}
+
+          {/* Quick Admin Toggle Helper */}
+          <div className="pt-1">
+            <button
+              onClick={toggleAdminDemo}
+              className={`w-full text-left text-[9px] uppercase font-mono px-2 py-1.5 rounded-lg transition flex items-center justify-between border cursor-pointer ${
+                isAdminDemoMode 
+                  ? 'bg-amber-500/20 text-[#FFB800] border-[#FFB800]/40' 
+                  : 'text-[#EDE8E1]/50 hover:text-[#EDE8E1] border-[#3E3A35] bg-[#1C1B19]'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <ShieldCheck size={11} className={isAdmin ? "text-[#FFB800]" : "text-zinc-600"} />
+                <span>{isAdmin ? 'Curador / Admin Ativo' : 'Simular Curador'}</span>
+              </span>
+              <span className="underline font-bold">Alternar</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main className={isEditorRoute ? "w-full p-0 max-w-none h-[100dvh] lg:h-auto lg:p-4 lg:max-w-6xl mx-auto" : "max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8"}>
+        <Routes>
+          <Route path="/" element={<Feed photos={photos} onLike={handleLike} onShare={handleShare} currentUser={currentUser} onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }} comments={comments} onOpenComments={openCommentsForPhoto} users={users} isAdmin={isAdmin} onOpenUpload={() => handleOpenUpload()} />} />
+          <Route 
+            path="/challenges" 
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
             element={
               <WeeklyChallenges
                 challenges={challenges}
@@ -2062,6 +2798,7 @@ const App: React.FC = () => {
           <Route
             path="/profile"
             element={
+<<<<<<< HEAD
               <ProfileDashboard
                 users={users}
                 photos={photos}
@@ -2072,6 +2809,19 @@ const App: React.FC = () => {
                 onEditPhoto={handleEditPhoto}
                 onDeleteSpot={handleDeleteSpot}
                 onRequireLogin={handleRequireLogin}
+=======
+              <ProfileDashboard 
+                users={users} 
+                photos={photos} 
+                spots={graffitiSpots} 
+                currentUser={currentUser} 
+                onUpdateProfile={handleUpdateProfile} 
+                onDeletePhoto={handleDeletePhoto} 
+                onEditPhoto={handleEditPhoto} 
+                onDeleteSpot={handleDeleteSpot} 
+                onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                onLogout={handleLogout}
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
                 notifications={notifications}
                 onMarkNotificationAsRead={handleMarkNotificationAsRead}
                 onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -2082,6 +2832,7 @@ const App: React.FC = () => {
           <Route
             path="/profile/:userId"
             element={
+<<<<<<< HEAD
               <ProfileDashboard
                 users={users}
                 photos={photos}
@@ -2092,6 +2843,19 @@ const App: React.FC = () => {
                 onEditPhoto={handleEditPhoto}
                 onDeleteSpot={handleDeleteSpot}
                 onRequireLogin={handleRequireLogin}
+=======
+              <ProfileDashboard 
+                users={users} 
+                photos={photos} 
+                spots={graffitiSpots} 
+                currentUser={currentUser} 
+                onUpdateProfile={handleUpdateProfile} 
+                onDeletePhoto={handleDeletePhoto} 
+                onEditPhoto={handleEditPhoto} 
+                onDeleteSpot={handleDeleteSpot} 
+                onRequireLogin={() => { setAuthModalTab('login'); setIsLoginModalOpen(true); }}
+                onLogout={handleLogout}
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
                 notifications={notifications}
                 onMarkNotificationAsRead={handleMarkNotificationAsRead}
                 onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -2278,6 +3042,7 @@ const App: React.FC = () => {
         )
       }
 
+<<<<<<< HEAD
       {
         isUploadModalOpen && currentUser && (
           <UploadModal
@@ -2312,6 +3077,79 @@ const App: React.FC = () => {
           />
         )
       }
+=======
+      {isUploadModalOpen && currentUser && (
+        <UploadModal 
+          challenge={selectedChallengeForUpload}
+          onClose={() => { setSelectedChallengeForUpload(null); setIsUploadModalOpen(false); }} 
+          onUpload={async (p) => { 
+            setPhotos(prev => [p, ...prev.filter(x => x.id !== p.id)]); 
+            try {
+              await persistPhoto(p);
+            } catch (err: any) {
+              console.warn("Aviso ao sincronizar foto com nuvem (mantida no cache local):", err);
+            }
+
+            // Sincronização inteligente com Supabase Storage e fila assíncrona de IA (Proporção, Perspectiva, Tons)
+            SupabaseService.processArtworkSubmission(p, p.imageUrl, (analysis: ArtworkAnalysis) => {
+              setPhotos(currentPhotos => currentPhotos.map(item => 
+                item.id === p.id 
+                  ? { ...item, analysis, analysisStatus: 'completed' } 
+                  : item
+              ));
+            }).then(({ photo: syncedPhoto }) => {
+              if (syncedPhoto.imageUrl && syncedPhoto.imageUrl !== p.imageUrl) {
+                setPhotos(currentPhotos => currentPhotos.map(item => 
+                  item.id === p.id ? { ...item, imageUrl: syncedPhoto.imageUrl, storagePath: syncedPhoto.storagePath } : item
+                ));
+              }
+            }).catch(sbErr => {
+              console.warn("Aviso na pipeline do Supabase:", sbErr);
+            });
+            const isChallenge = Boolean(selectedChallengeForUpload);
+            const addedResponsa = isChallenge ? (selectedChallengeForUpload?.rewardResponsa || 35) : 15;
+            const newBadges = new Set([...currentUser.badges, 'click']);
+            if (isChallenge && selectedChallengeForUpload?.rewardBadgeId) {
+              newBadges.add(selectedChallengeForUpload.rewardBadgeId);
+            }
+            const completedList = isChallenge && selectedChallengeForUpload 
+              ? Array.from(new Set([...(currentUser.completedChallenges || []), selectedChallengeForUpload.id]))
+              : (currentUser.completedChallenges || []);
+
+            const updatedUser: User = {
+              ...currentUser,
+              badges: Array.from(newBadges),
+              responsa: currentUser.responsa + addedResponsa,
+              completedChallenges: completedList
+            };
+            setCurrentUser(updatedUser);
+            setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+            try {
+              await persistUser(updatedUser);
+            } catch (err) {
+              console.warn("Aviso ao persistir usuário atualizado:", err);
+            }
+            setSelectedChallengeForUpload(null);
+            setIsUploadModalOpen(false); 
+          }} 
+          user={currentUser} 
+        />
+      )}
+      {isLoginModalOpen && (
+        <AuthModal 
+          users={users} 
+          currentUser={currentUser}
+          initialTab={authModalTab}
+          reason={authModalReason}
+          onSelectUser={handleSelectUser} 
+          onRegisterUser={handleRegisterUser}
+          onClose={() => {
+            setIsLoginModalOpen(false);
+            setAuthModalReason(null);
+          }} 
+        />
+      )}
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
 
       {/* Sistema de Notificação Festiva (Toast e Modal com Confete) */}
       <AchievementCelebration
@@ -2346,7 +3184,17 @@ const App: React.FC = () => {
           void navigate('/map');
         }}
       />
+<<<<<<< HEAD
     </div >
+=======
+
+      {/* Modal de Diagnóstico e Estrutura Relacional Supabase */}
+      <SupabaseSyncModal 
+        isOpen={isSupabaseModalOpen}
+        onClose={() => setIsSupabaseModalOpen(false)}
+      />
+    </div>
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   );
 };
 
@@ -2646,8 +3494,9 @@ const Feed: React.FC<{
   comments: Comment[],
   onOpenComments: (photo: PhotoBase) => void,
   users: User[],
-  isAdmin?: boolean
-}> = ({ photos, onLike, onShare, currentUser, onRequireLogin, comments, onOpenComments, users, isAdmin }) => {
+  isAdmin?: boolean,
+  onOpenUpload?: () => void
+}> = ({ photos, onLike, onShare, currentUser, onRequireLogin, comments, onOpenComments, users, isAdmin, onOpenUpload }) => {
   const navigate = useNavigate();
   const [tagSearchQuery, setTagSearchQuery] = useState('');
 
@@ -2933,8 +3782,24 @@ const Feed: React.FC<{
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estética periférica real de Palmas</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+<<<<<<< HEAD
           <Link
             to="/challenges"
+=======
+          {onOpenUpload && (
+            <button 
+              type="button"
+              onClick={onOpenUpload}
+              className="inline-flex items-center gap-1.5 bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] hover:scale-105 text-[10px] font-black uppercase px-3.5 py-2 rounded-2xl transition shadow-sm cursor-pointer active:scale-95"
+              title="Tirar ou Subir Foto Real de Palmas"
+            >
+              <Camera size={13} />
+              <span>Publicar Foto</span>
+            </button>
+          )}
+          <Link 
+            to="/challenges" 
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
             className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF5722] to-[#FF8A65] text-white hover:scale-105 text-[10px] font-black uppercase px-3.5 py-2 rounded-2xl transition shadow-sm"
           >
             <Flame size={13} />
@@ -3151,7 +4016,230 @@ const Feed: React.FC<{
       )}
 
       {/* Grid de Fotos e Remixes Filtrados ou Estado Vazio */}
+<<<<<<< HEAD
       {feedContent}
+=======
+      {photos.length === 0 ? (
+        <SkeletonFeed />
+      ) : filteredPhotos.length === 0 ? (
+        <div className="bg-[#1C1B19] rounded-[2.5rem] p-12 text-center border border-[#3E3A35] shadow-sm space-y-4">
+          <div className="w-16 h-16 bg-[#242220] text-[#FFB800] border border-[#3E3A35] rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+            <Tag size={32} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-black uppercase tracking-tight text-white">
+              Nenhuma obra com a tag "{tagSearchQuery}"
+            </h3>
+            <p className="text-xs text-[#EDE8E1]/80 max-w-md mx-auto leading-relaxed font-medium">
+              Não encontramos nenhuma foto ou remix cadastrado com essa tag no momento. Tente buscar por outras tags como {(registeredTagsWithCount || []).slice(0, 4).map(t => t.tag).join(', ')} ou limpe a busca para ver o fluxo completo.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setTagSearchQuery('')}
+              className="px-6 py-3.5 bg-[#FFB800] hover:bg-[#FFA000] text-[#141311] font-black text-xs uppercase tracking-wider rounded-2xl transition shadow-lg inline-flex items-center gap-2 hover:scale-105 cursor-pointer"
+            >
+              <RotateCcw size={15} />
+              <span>Limpar Filtro de Tags</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredPhotos.map(photo => {
+            const photoCommentsCount = comments.filter(c => c.targetId === photo.id).length;
+
+            return (
+              <div key={photo.id} className="bg-[#1C1B19] rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all group border border-[#3E3A35] flex flex-col justify-between">
+                <div>
+                  <div 
+                    onClick={() => {
+                      if (currentUser) {
+                        navigate(`/remix/${photo.id}`);
+                      } else {
+                        onRequireLogin();
+                      }
+                    }}
+                    className="relative w-full aspect-[4/5] bg-[#242220] overflow-hidden shrink-0 cursor-pointer"
+                  >
+                    <img 
+                      src={photo.imageUrl} 
+                      alt={photo.title} 
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=1200&q=80';
+                      }}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                    />
+                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex flex-wrap gap-1.5 sm:gap-2 z-10">
+                      {photo.type === 'remix' ? (
+                        <div className="bg-purple-700/90 text-white px-2.5 py-1.5 rounded-xl shadow-lg flex items-center space-x-1.5 backdrop-blur-sm">
+                          <Paintbrush size={11} />
+                          <span className="text-[8px] font-black uppercase tracking-wider">Remix</span>
+                        </div>
+                      ) : (
+                        <div className="bg-[#242220]/90 border border-[#3E3A35] text-white px-2.5 py-1.5 rounded-xl shadow-lg flex items-center space-x-1.5 backdrop-blur-sm">
+                          <Camera size={11} />
+                          <span className="text-[8px] font-black uppercase tracking-wider">Foto Base</span>
+                        </div>
+                      )}
+                      {photo.isGoldStandard && (
+                        <div className="bg-[#FFB800] text-[#2D2A26] px-2.5 py-1.5 rounded-xl shadow-lg flex items-center space-x-1">
+                          <Globe size={11} />
+                          <span className="text-[8px] font-black uppercase">Ouro</span>
+                        </div>
+                      )}
+                      {photo.location && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/map?photoId=${photo.id}`);
+                          }}
+                          title="Ver localização real no Mapa de Palmas"
+                          className="bg-[#141311]/90 hover:bg-[#141311] border border-[#3E3A35] text-white px-2.5 py-1.5 rounded-xl shadow-lg flex items-center space-x-1.5 backdrop-blur-sm transition hover:scale-105 cursor-pointer"
+                        >
+                          <Navigation size={10} className="text-[#FFB800]" />
+                          <span className="text-[8px] font-black uppercase">{photo.location.neighborhood}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Desktop Hover Quick Actions Overlay */}
+                    <div className="hidden sm:flex absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex-col items-center justify-center space-y-2.5 px-6 text-center backdrop-blur-sm">
+                      <button onClick={() => currentUser ? navigate(`/remix/${photo.id}`) : onRequireLogin()} className="w-full bg-[#FFB800] text-[#2D2A26] py-3 rounded-2xl font-black uppercase text-xs hover:scale-105 transition cursor-pointer">Remixar Visão</button>
+                      <button onClick={() => navigate(`/lineage/${photo.id}`)} className="w-full bg-[#242220] border border-[#3E3A35] text-white hover:border-[#FFB800] py-2.5 rounded-2xl font-black uppercase text-xs hover:scale-105 transition flex items-center justify-center space-x-2 cursor-pointer"><GitBranch size={14} /><span>Ver Linhagem</span></button>
+                      <button 
+                        onClick={() => onOpenComments(photo)} 
+                        className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white py-2.5 rounded-2xl font-black uppercase text-xs transition flex items-center justify-center space-x-2 backdrop-blur-sm cursor-pointer"
+                      >
+                        <MessageSquare size={13} className="text-[#FFB800]" />
+                        <span>Comentários ({photoCommentsCount})</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5 pb-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-base leading-tight truncate text-white">{photo.title}</h3>
+                        <Link to={`/profile/${photo.userId}`} className="text-[10px] text-[#FFB800] font-bold uppercase truncate block mt-0.5">por @{photo.authorName}</Link>
+                      </div>
+                    </div>
+
+                    {/* Tags cadastradas na foto/remix com clique direto para filtrar */}
+                    {photo.tags && photo.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {photo.tags.map((tag, idx) => {
+                          const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                          const isTagActive = normalizeTag(tagSearchQuery) === normalizeTag(tag);
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTagSearchQuery(tag);
+                              }}
+                              title={`Filtrar o Fluxo por ${displayTag}`}
+                              className={`text-[9px] font-black px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+                                isTagActive 
+                                  ? 'bg-[#FFB800] text-[#2D2A26] shadow-sm scale-105' 
+                                  : 'bg-[#242220] text-zinc-300 hover:bg-[#2D2A26] hover:text-[#FFB800] border border-[#3E3A35]'
+                              }`}
+                            >
+                              <Tag size={9} />
+                              <span>{displayTag}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Badge e Painel de Mentoria Técnica IA */}
+                    <ArtworkAnalysisBadge 
+                      analysis={photo.analysis} 
+                      status={photo.analysisStatus} 
+                    />
+                  </div>
+                </div>
+
+                {/* Área de Ações Alinhada em Grid */}
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-[#3E3A35] mt-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5 sm:gap-3 items-center">
+                    {/* Botão de Ação Primária: Remix Imediato em 1 Toque */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
+                        if (currentUser) {
+                          navigate(`/remix/${photo.id}`);
+                        } else {
+                          onRequireLogin();
+                        }
+                      }}
+                      className="w-full sm:w-auto h-12 min-h-[48px] px-4 py-2.5 bg-[#FFB800] hover:bg-[#EAB308] active:scale-95 text-[#141311] rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition cursor-pointer"
+                      title="Remixar esta obra no Estúdio UPMM"
+                    >
+                      <Paintbrush size={17} className="text-[#141311] shrink-0" />
+                      <span className="truncate">Remixar Agora</span>
+                    </button>
+
+                    {/* Grade de Botões de Ação Secundária */}
+                    <div className="grid grid-cols-4 gap-1 sm:gap-2 justify-items-center w-full sm:w-auto">
+                      <button 
+                        type="button"
+                        onClick={() => navigate(`/lineage/${photo.id}`)}
+                        className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#242220] active:scale-90 transition cursor-pointer"
+                        title="Ver Linhagem e Versões Desta Foto"
+                        aria-label="Ver linhagem"
+                      >
+                        <GitBranch size={19} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => onOpenComments(photo)} 
+                        className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex flex-col items-center justify-center text-zinc-400 hover:text-white hover:bg-[#242220] active:scale-90 transition group/comm cursor-pointer"
+                        title="Ver ou adicionar comentários"
+                        aria-label="Comentários"
+                      >
+                        <MessageSquare size={18} className="group-hover/comm:text-[#FFB800] transition" />
+                        <span className="text-[9px] font-black text-zinc-400 mt-0.5 leading-none">{photoCommentsCount}</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => onShare(photo)} 
+                        className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center text-zinc-400 hover:text-[#FFB800] hover:bg-[#242220] active:scale-90 transition cursor-pointer" 
+                        title="Compartilhar Obra"
+                        aria-label="Compartilhar"
+                      >
+                        <Share2 size={19} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                          onLike(photo.id);
+                        }} 
+                        className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex flex-col items-center justify-center hover:bg-[#242220] active:scale-90 transition cursor-pointer" 
+                        title="Dar Vibe"
+                        aria-label="Dar Vibe"
+                      >
+                        <Heart size={19} className={photo.vibeCount > 0 ? "text-red-500 fill-current" : "text-zinc-500 hover:text-red-400"} />
+                        <span className="text-[9px] font-black text-zinc-400 mt-0.5 leading-none">{photo.vibeCount}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
     </div>
   );
 };
@@ -3879,9 +4967,15 @@ const PALMAS_NEIGHBORHOODS = [
   }
 ];
 
+<<<<<<< HEAD
 const UploadModal: React.FC<{
   onClose: () => void,
   onUpload: (p: PhotoBase) => void,
+=======
+const UploadModal: React.FC<{ 
+  onClose: () => void, 
+  onUpload: (p: PhotoBase) => Promise<void> | void, 
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
   user: User,
   challenge?: WeeklyChallenge | null
 }> = ({ onClose, onUpload, user, challenge }) => {
@@ -3889,8 +4983,8 @@ const UploadModal: React.FC<{
   const [preview, setPreview] = useState<string>('');
   const [title, setTitle] = useState(challenge ? `Desafio: ${challenge.title}` : '');
   const [selectedTerritory, setSelectedTerritory] = useState(() => {
-    if (challenge?.neighborhood) {
-      const match = PALMAS_NEIGHBORHOODS.find(n => n.name.toLowerCase().includes(challenge.neighborhood!.toLowerCase()));
+    if (challenge?.featuredNeighborhood) {
+      const match = PALMAS_NEIGHBORHOODS.find(n => n.name.toLowerCase().includes(challenge.featuredNeighborhood!.toLowerCase()));
       if (match) return match;
     }
     return PALMAS_NEIGHBORHOODS[0];
@@ -3900,6 +4994,16 @@ const UploadModal: React.FC<{
   const [pexelsQuery, setPexelsQuery] = useState(challenge ? challenge.title.split(' ')[0] : '');
   const [pexelsResults, setPexelsResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // States for file processing, drag-and-drop, errors, and submission
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imageSizeKB, setImageSizeKB] = useState<number | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleTerritoryChange = (name: string) => {
     const item = PALMAS_NEIGHBORHOODS.find(n => n.name === name) || PALMAS_NEIGHBORHOODS[0];
@@ -3922,6 +5026,7 @@ const UploadModal: React.FC<{
     }
   };
 
+<<<<<<< HEAD
   const handleSubmit = () => {
     if (!preview || !title) return;
     // Pequeno offset aleatório para que múltiplas fotos no mesmo território não fiquem exatamente no mesmo pixel
@@ -3932,26 +5037,94 @@ const UploadModal: React.FC<{
         if (!finalTags.includes(t)) finalTags.push(t);
       });
       finalTags.push('#DesafioSemanal');
+=======
+  const handleFileSelected = async (file?: File | null) => {
+    if (!file) return;
+
+    // Validação flexível que suporta MIME types e extensões conhecidas de fotos
+    const isImageMime = file.type ? file.type.startsWith('image/') : false;
+    const isImageExt = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|svg)$/i.test(file.name || '');
+
+    if (!isImageMime && !isImageExt) {
+      setUploadError('Por favor, selecione um arquivo de imagem válido (JPG, PNG ou WEBP).');
+      return;
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
     }
-    const finalPhoto: PhotoBase = {
-      id: `photo_${Date.now()}`,
-      userId: user.id,
-      authorName: user.name,
-      title,
-      imageUrl: preview,
-      tags: finalTags,
-      vibeCount: 0,
-      type: 'base',
-      challengeId: challenge?.id,
-      location: {
-        lat: selectedTerritory.lat + jitter(),
-        lng: selectedTerritory.lng + jitter(),
-        neighborhood: selectedTerritory.name,
-        address: customAddress,
-        landmark: landmark
+
+    setUploadError(null);
+    setIsProcessing(true);
+
+    try {
+      // Compressão inteligente garantindo que a foto fique sob o limite de 1MB do Firestore e carregue ultra-rápido
+      const optimizedDataUrl = await compressAndOptimizeImage(file, {
+        maxWidth: 1280,
+        maxHeight: 1280,
+        maxSizeBytes: 450 * 1024, // 450 KB binário (~600 KB base64, garantindo folga total sob 1MB do Firestore)
+        quality: 0.82
+      });
+
+      setPreview(optimizedDataUrl);
+      const estKB = Math.round((optimizedDataUrl.length * 3) / 4 / 1024);
+      setImageSizeKB(estKB);
+
+      // Auto-preenche o título se estiver vazio
+      if (!title.trim()) {
+        const cleanName = (file.name || '').replace(/\.[^/.]+$/, '').trim();
+        const isGeneric = !cleanName || /^(img|image|pxl|photo|foto|dji|screenshot|captura|whatsapp)/i.test(cleanName);
+        setTitle(isGeneric ? `Visão em ${selectedTerritory.name}` : cleanName);
       }
-    };
-    onUpload(finalPhoto);
+    } catch (err: any) {
+      console.error("Erro ao processar imagem:", err);
+      setUploadError(err?.message || 'Falha ao processar e comprimir a foto. Tente novamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!preview || !title.trim() || isSubmitting || isProcessing) return;
+
+    setIsSubmitting(true);
+    setUploadError(null);
+
+    try {
+      // Pequeno offset aleatório para que múltiplas fotos no mesmo território não fiquem exatamente no mesmo pixel
+      const jitter = () => (Math.random() - 0.5) * 0.0025;
+      const finalTags = ['#Palmas', `#${selectedTerritory.name.replace(/\s+/g, '')}`, '#ArteDeRua'];
+      if (challenge) {
+        challenge.tags.forEach(t => {
+          if (!finalTags.includes(t)) finalTags.push(t);
+        });
+        finalTags.push('#DesafioSemanal');
+      }
+
+      const finalPhoto: PhotoBase = {
+        id: `photo_${Date.now()}`,
+        userId: user.id,
+        authorName: user.name,
+        title: title.trim(),
+        imageUrl: preview,
+        tags: finalTags,
+        vibeCount: 0,
+        type: 'base',
+        challengeId: challenge?.id,
+        createdAt: Date.now(),
+        location: {
+          lat: selectedTerritory.lat + jitter(),
+          lng: selectedTerritory.lng + jitter(),
+          neighborhood: selectedTerritory.name,
+          address: customAddress,
+          landmark: landmark
+        }
+      };
+
+      await onUpload(finalPhoto);
+      onClose();
+    } catch (err: any) {
+      console.error("Erro ao salvar foto:", err);
+      setUploadError(err?.message || 'Erro ao registrar obra no servidor. Tente novamente.');
+      setIsSubmitting(false);
+    }
   };
 
   // Conteúdo da área de seleção de imagem resolvido sem ternários aninhados (S3358)
@@ -4053,9 +5226,15 @@ const UploadModal: React.FC<{
               {challenge ? 'Submeter Obra do Desafio' : 'Lançar Nova Visão - PMW'}
             </h3>
           </div>
+<<<<<<< HEAD
           <button
             onClick={onClose}
             className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] rounded-full text-zinc-400 hover:text-white transition"
+=======
+          <button 
+            onClick={onClose} 
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#242220] hover:bg-[#2D2A26] rounded-full text-zinc-400 hover:text-white transition cursor-pointer"
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
             aria-label="Fechar"
           >
             <X size={20} />
@@ -4069,7 +5248,7 @@ const UploadModal: React.FC<{
             className={`flex-1 py-3.5 min-h-[48px] rounded-2xl font-black uppercase text-[10px] sm:text-xs transition flex items-center justify-center cursor-pointer ${activeSource === 'upload' ? 'bg-[#FFB800] text-[#141311] shadow-md' : 'bg-[#242220] text-zinc-400 hover:bg-[#2D2A26] border border-[#3E3A35]'
               }`}
           >
-            Meu Arquivo Local
+            Meu Arquivo Local / Câmera
           </button>
           <button
             type="button"
@@ -4081,7 +5260,15 @@ const UploadModal: React.FC<{
           </button>
         </div>
 
+        {uploadError && (
+          <div className="mb-4 p-3 bg-red-950/60 border border-red-800 text-red-200 text-xs rounded-xl flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-400 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
         <div className="space-y-4">
+<<<<<<< HEAD
           {sourceContent}
 
           <div className="space-y-1">
@@ -4093,6 +5280,191 @@ const UploadModal: React.FC<{
               className="w-full p-3.5 bg-[#242220] rounded-2xl border border-[#3E3A35] font-bold text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FFB800]"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+=======
+          {activeSource === 'upload' ? (
+            !preview ? (
+              <div 
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) handleFileSelected(f);
+                }}
+                className={`w-full p-6 border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center transition text-center ${
+                  isDragging 
+                    ? 'border-[#FFB800] bg-[#FFB800]/10 scale-[1.01]' 
+                    : 'border-[#3E3A35] bg-[#242220] hover:bg-[#2A2825]'
+                }`}
+              >
+                {/* Hidden File inputs */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
+                  }} 
+                />
+                <input 
+                  type="file" 
+                  ref={cameraInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  capture="environment"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
+                  }} 
+                />
+
+                {isProcessing ? (
+                  <div className="py-8 flex flex-col items-center gap-3">
+                    <Loader2 size={38} className="text-[#FFB800] animate-spin" />
+                    <p className="text-xs font-bold text-[#FFB800] uppercase tracking-wider">
+                      Otimizando imagem para a rede...
+                    </p>
+                    <span className="text-[10px] text-zinc-400">Reduzindo peso e preservando a qualidade visual</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 rounded-2xl bg-[#1C1B19] border border-[#3E3A35] flex items-center justify-center text-[#FFB800] mb-3">
+                      <Camera size={28} />
+                    </div>
+                    <h4 className="text-sm font-black uppercase text-white tracking-tight">
+                      {isDragging ? 'Solte a foto aqui!' : 'Arraste ou escolha uma foto do aparelho'}
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-1 max-w-sm">
+                      Fotografe o muro, a rua ou paisagem da sua quebrada em Palmas. Fotos pesadas são compactadas automaticamente sem perder nitidez.
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] rounded-xl text-xs font-black uppercase shadow-sm transition active:scale-95 cursor-pointer"
+                      >
+                        <Camera size={14} />
+                        <span>Tirar Foto (Câmera)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#1C1B19] hover:bg-[#2A2825] border border-[#3E3A35] text-zinc-200 rounded-xl text-xs font-black uppercase shadow-sm transition active:scale-95 cursor-pointer"
+                      >
+                        <Upload size={14} className="text-[#FFB800]" />
+                        <span>Escolher da Galeria</span>
+                      </button>
+                    </div>
+
+                    <span className="text-[10px] text-zinc-500 mt-3 font-mono">
+                      PNG, JPG, WEBP suportados
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="relative rounded-[2rem] overflow-hidden border border-[#3E3A35] bg-black">
+                <img 
+                  src={preview} 
+                  referrerPolicy="no-referrer" 
+                  className="w-full h-56 sm:h-64 object-cover" 
+                  alt="Prévia da foto" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                  <span className="text-[10px] font-mono bg-black/80 text-[#FFB800] border border-[#3E3A35] px-2.5 py-1 rounded-full">
+                    ✓ Imagem otimizada {imageSizeKB ? `(~${imageSizeKB} KB)` : ''}
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-black/80 hover:bg-[#1C1B19] border border-[#3E3A35] text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-full transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <Camera size={11} className="text-[#FFB800]" />
+                      <span>Trocar</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setPreview(''); setImageSizeKB(null); }}
+                      className="bg-red-900/80 hover:bg-red-800 text-white p-1.5 rounded-full transition cursor-pointer"
+                      title="Remover foto"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                    e.target.value = '';
+                  }} 
+                />
+              </div>
+            )
+          ) : (
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <input 
+                  type="text" 
+                  placeholder="Pesquisar imagem (ex: street art, hip hop, skate)..." 
+                  value={pexelsQuery} 
+                  onChange={(e) => setPexelsQuery(e.target.value)} 
+                  onKeyDown={(e) => e.key === 'Enter' && handlePexelsSearch()}
+                  className="flex-1 p-3.5 bg-[#242220] rounded-2xl border border-[#3E3A35] text-xs font-bold text-white placeholder-zinc-500 focus:outline-none focus:border-[#FFB800]" 
+                />
+                <button 
+                  type="button"
+                  onClick={handlePexelsSearch} 
+                  className="bg-[#FFB800] text-[#141311] px-5 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-[#EAB308] transition"
+                >
+                  {isSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto no-scrollbar">
+                {pexelsResults.map(p => (
+                  <button 
+                    key={p.id} 
+                    type="button"
+                    onClick={() => { 
+                      setPreview(p.src.large); 
+                      setImageSizeKB(null);
+                      setTitle(`Visão: ${p.photographer}`); 
+                    }}
+                    className="hover:opacity-80 transition cursor-pointer"
+                  >
+                    <img src={p.src.medium} referrerPolicy="no-referrer" className="aspect-square object-cover rounded-xl w-full" alt="" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block ml-1">
+              Título da Obra <span className="text-[#FFB800]">*</span>
+            </label>
+            <input 
+              type="text" 
+              placeholder="Ex: Grafite da Resistência na Av. Tocantins" 
+              className="w-full p-3.5 bg-[#242220] rounded-2xl border border-[#3E3A35] font-bold text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FFB800]" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
             />
           </div>
 
@@ -4136,12 +5508,35 @@ const UploadModal: React.FC<{
           </div>
         </div>
 
+<<<<<<< HEAD
         <button
           disabled={!preview || !title}
           onClick={handleSubmit}
           className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] py-4 min-h-[48px] mt-6 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-102 active:scale-95 transition disabled:opacity-50 flex items-center justify-center cursor-pointer"
+=======
+        <button 
+          disabled={!preview || !title.trim() || isProcessing || isSubmitting} 
+          onClick={handleSubmit} 
+          className="w-full bg-[#FFB800] hover:bg-[#EAB308] text-[#141311] py-4 min-h-[50px] mt-6 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-102 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
         >
-          Publicar Visão com Localização Real em Palmas
+          {isSubmitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Publicando Visão na Quebrada...</span>
+            </>
+          ) : isProcessing ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Otimizando Imagem...</span>
+            </>
+          ) : !preview ? (
+            <span>Selecione ou Tire uma Foto para Publicar</span>
+          ) : !title.trim() ? (
+            <span>Informe o Título da Obra Acima</span>
+          ) : (
+            <span>Publicar Visão com Localização Real em Palmas</span>
+          )}
         </button>
       </div>
     </div>

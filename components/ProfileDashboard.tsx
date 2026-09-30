@@ -20,11 +20,13 @@ import {
   Upload,
   Bell,
   GitBranch,
-  CheckCheck
+  CheckCheck,
+  LogOut
 } from 'lucide-react';
 import { User, PhotoBase, GraffitiSpot, UserLevel, RemixNotification } from '../types';
 import { BADGES } from '../constants';
 import { RemixNotificationModal, RemixNotificationCard } from './RemixNotificationCenter';
+import { compressAndOptimizeImage } from '../imageProcessor';
 
 type DashboardTabKey = 'bases' | 'remixes' | 'received-remixes' | 'spots' | 'badges' | 'battles';
 
@@ -301,6 +303,7 @@ interface ProfileDashboardProps {
   onEditPhoto: (photoId: string, updatedData: { title: string; tags: string[]; neighborhood?: string }) => void;
   onDeleteSpot: (spotId: string) => void;
   onRequireLogin: () => void;
+  onLogout?: () => void;
   notifications?: RemixNotification[];
   onMarkNotificationAsRead?: (id: string) => void;
   onMarkAllNotificationsAsRead?: () => void;
@@ -317,6 +320,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   onEditPhoto,
   onDeleteSpot,
   onRequireLogin,
+  onLogout,
   notifications = [],
   onMarkNotificationAsRead,
   onMarkAllNotificationsAsRead,
@@ -346,7 +350,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -355,19 +359,18 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarUploadError('A imagem deve ter no máximo 5MB.');
-      return;
+    try {
+      const optimized = await compressAndOptimizeImage(file, {
+        maxWidth: 360,
+        maxHeight: 360,
+        maxSizeBytes: 180 * 1024,
+        quality: 0.8
+      });
+      setEditAvatar(optimized);
+      setAvatarUploadError(null);
+    } catch (err: any) {
+      setAvatarUploadError(err?.message || 'Erro ao carregar avatar.');
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setEditAvatar(reader.result);
-        setAvatarUploadError(null);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   // Edit Photo Modal state
@@ -594,6 +597,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         </div>
       )}
 
+<<<<<<< HEAD
       <ProfileHeader
         profileUser={profileUser}
         isOwner={isOwner}
@@ -603,6 +607,190 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         onOpenNotifications={() => setIsNotificationsModalOpen(true)}
         onShowAllBadges={() => setActiveTab('badges')}
       />
+=======
+      {/* Main Profile Header Card */}
+      <div className="bg-[#2D2A26] text-white p-6 sm:p-10 rounded-[3rem] shadow-2xl relative overflow-hidden border border-white/5">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+          <div className="relative shrink-0">
+            <img 
+              src={profileUser.avatar} 
+              alt={profileUser.name}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
+              }}
+              className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-[#FFB800] object-cover shadow-xl" 
+            />
+            {isOwner && (
+              <button
+                onClick={handleOpenEditProfile}
+                title="Editar foto e perfil"
+                className="absolute bottom-1 right-1 bg-[#FFB800] text-[#2D2A26] p-2.5 rounded-full shadow-lg hover:scale-110 transition"
+              >
+                <Camera size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 text-center md:text-left space-y-3">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight">
+                {profileUser.name}
+              </h1>
+              <span className="text-xs bg-[#FFB800] text-[#2D2A26] font-black px-3 py-1 rounded-full uppercase">
+                {profileUser.level}
+              </span>
+              {isOwner && (
+                <span className="text-[9px] bg-white/10 text-gray-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                  Meu Perfil
+                </span>
+              )}
+              {isOwner && unreadRemixCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsNotificationsModalOpen(true)}
+                  className="text-[10px] bg-[#FF5722] hover:bg-[#E64A19] text-white font-black px-3 py-1 rounded-full uppercase flex items-center gap-1.5 shadow-md animate-pulse"
+                  title="Notificações de novos remixes da sua arte"
+                >
+                  <Bell size={12} className="animate-bounce" />
+                  <span>{unreadRemixCount} novo{unreadRemixCount === 1 ? '' : 's'} remix{unreadRemixCount === 1 ? '' : 'es'}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-gray-300">
+              <div className="inline-flex items-center gap-1">
+                <MapPin size={13} className="text-[#FFB800]" />
+                <span className="font-bold">{profileUser.neighborhood || 'Palmas - TO'}</span>
+              </div>
+              {profileUser.instagram && (
+                <a 
+                  href={`https://instagram.com/${profileUser.instagram.replace('@', '')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:text-[#FFB800] transition"
+                >
+                  <Instagram size={13} />
+                  <span>{profileUser.instagram}</span>
+                </a>
+              )}
+            </div>
+
+            <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed">
+              {profileUser.bio}
+            </p>
+
+            {/* Reputation, Vibes, and Actions */}
+            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-[#FFB800]" />
+                <span className="text-xs font-black">{profileUser.responsa}</span>
+                <span className="text-[9px] uppercase text-gray-400 font-bold">Responsa</span>
+              </div>
+
+              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+                <Sparkles size={14} className="text-amber-400" />
+                <span className="text-xs font-black">{profileUser.vibe}</span>
+                <span className="text-[9px] uppercase text-gray-400 font-bold">Vibes</span>
+              </div>
+
+              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+                <Sword size={14} className="text-red-400" />
+                <span className="text-xs font-black">{totalWins}V</span>
+                <span className="text-[9px] uppercase text-gray-400 font-bold">em Batalhas</span>
+              </div>
+
+              <Link
+                to="/ranking"
+                className="bg-[#FFB800] hover:bg-white text-[#2D2A26] px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1 shadow"
+              >
+                <Trophy size={12} />
+                <span>Ver no Ranking</span>
+              </Link>
+
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setIsNotificationsModalOpen(true)}
+                  className={`relative px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border shadow ${
+                    unreadRemixCount > 0
+                      ? 'bg-[#FF5722] hover:bg-[#E64A19] text-white border-[#FF5722]'
+                      : 'bg-white/10 hover:bg-[#FFB800] hover:text-[#2D2A26] text-white border-white/10'
+                  }`}
+                  title="Notificações de Remixes das suas Obras Originais"
+                >
+                  <div className="relative">
+                    <Bell size={13} className={unreadRemixCount > 0 ? 'animate-wiggle' : ''} />
+                    {unreadRemixCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#FFB800] rounded-full animate-ping" />
+                    )}
+                  </div>
+                  <span>Notificações</span>
+                  {unreadRemixCount > 0 && (
+                    <span className="bg-[#FFB800] text-[#2D2A26] text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                      {unreadRemixCount}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {isOwner && (
+                <button
+                  onClick={handleOpenEditProfile}
+                  className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-white/10 cursor-pointer"
+                >
+                  <Edit3 size={12} />
+                  <span>Editar Dados</span>
+                </button>
+              )}
+
+              {isOwner && onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-red-500/30 cursor-pointer"
+                  title="Desconectar do Perfil / Supabase Auth"
+                >
+                  <LogOut size={12} />
+                  <span>Sair da Conta</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Unlocked Badges Bar */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFB800]">
+              Insígnias & Conquistas Desbloqueadas ({profileUser.badges.length})
+            </span>
+            <button
+              onClick={() => setActiveTab('badges')}
+              className="text-[10px] text-gray-400 hover:text-white uppercase font-bold transition"
+            >
+              Ver Todas as Badges &rarr;
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {profileUser.badges.map(bId => {
+              const b = BADGES.find(x => x.id === bId) || { id: bId, name: bId, icon: '⭐', description: 'Conquista' };
+              return (
+                <div 
+                  key={bId}
+                  title={`${b.name}: ${b.description}`}
+                  className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-xl text-gray-100 border border-white/10 transition cursor-help group"
+                >
+                  <span className="text-sm group-hover:scale-125 transition-transform">{b.icon}</span>
+                  <span className="text-[10px] font-bold">{b.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+>>>>>>> 5dcfb1aa1fea5665ecfb067259801388532586ef
 
       {/* Remix Notification Alert Banner for Owner with Direct Link to Lineage Tree */}
       {isOwner && unreadRemixCount > 0 && userRemixNotifications.length > 0 && (
@@ -1462,6 +1650,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         isOpen={isNotificationsModalOpen}
         onClose={() => setIsNotificationsModalOpen(false)}
         notifications={userRemixNotifications}
+        unreadCount={unreadRemixCount}
         onMarkAsRead={handleMarkAsReadInternal}
         onMarkAllAsRead={handleMarkAllAsReadInternal}
       />

@@ -482,7 +482,7 @@ export const PalmasRealMap: React.FC<PalmasRealMapProps> = ({
       p.location.neighborhood.toLowerCase().includes(q) ||
       (p.location.address && p.location.address.toLowerCase().includes(q)) ||
       (p.type === 'remix' && ('remix'.includes(q) || 'releituras'.includes(q))) ||
-      p.tags.some(t => t.toLowerCase().includes(q)) ||
+      (p.tags || []).some(t => t.toLowerCase().includes(q)) ||
       (original && (original.title.toLowerCase().includes(q) || original.authorName.toLowerCase().includes(q)))
     );
   });
@@ -875,13 +875,15 @@ export const PalmasRealMap: React.FC<PalmasRealMapProps> = ({
                         <span className="text-[8px] text-purple-400 underline font-semibold">Ver base original &rarr;</span>
                       </div>
                     )}
-                    <div className="flex gap-1 flex-wrap mt-2">
-                      {activePhoto.tags.map(t => (
-                        <span key={t} className="text-[8px] bg-[#242220] border border-[#3E3A35] text-zinc-300 px-2 py-0.5 rounded-full font-bold">
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
+                    {activePhoto.tags && activePhoto.tags.length > 0 && (
+                      <div className="flex gap-1 flex-wrap mt-2">
+                        {activePhoto.tags.map(t => (
+                          <span key={t} className="text-[8px] bg-[#242220] border border-[#3E3A35] text-zinc-300 px-2 py-0.5 rounded-full font-bold">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

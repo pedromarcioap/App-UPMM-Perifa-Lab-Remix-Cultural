@@ -34,6 +34,7 @@ import { STICKERS, ANIMATED_STICKERS, COLORS, STREET_FONTS } from '../constants'
 import { AssetDrawer } from './AssetDrawer';
 import { AssetItem, BrandedAssetPack } from '../types/assets';
 import { ASSET_CATALOG } from '../constants/assetsCatalog';
+import { uploadImageToSupabase, isSupabaseConfigured } from '../supabase';
 
 // Performance & Memory Guards for Canvas & Mobile
 const MAX_ASSET_DIMENSION = 512; // Downscale large assets to max 512px to prevent GPU out-of-memory
@@ -162,6 +163,21 @@ const Editor: React.FC<{
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Limpeza explícita de memória de GPU e instâncias de Canvas na desmontagem do componente
+  useEffect(() => {
+    return () => {
+      if (imageCache.current) {
+        imageCache.current.forEach((asset) => {
+          if (asset instanceof HTMLCanvasElement) {
+            asset.width = 0;
+            asset.height = 0;
+          }
+        });
+        imageCache.current.clear();
+      }
+    };
   }, []);
 
   const touchActivity = () => {
@@ -769,14 +785,31 @@ const Editor: React.FC<{
     }
     
     try {
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.90);
+      let finalImageUrl = dataUrl;
+      let storagePath: string | undefined = undefined;
+
+      // 1. Tenta upload em Blob/File para Supabase Storage se configurado
+      if (isSupabaseConfigured()) {
+        try {
+          const uploadResult = await uploadImageToSupabase(dataUrl, 'artworks');
+          if (uploadResult.publicUrl) {
+            finalImageUrl = uploadResult.publicUrl;
+            storagePath = uploadResult.storagePath || undefined;
+          }
+        } catch (uploadErr) {
+          console.warn('[Editor] Fallback para imagem inline após falha no Storage:', uploadErr);
+        }
+      }
+
       const remixId = `remix_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
       const newRemix: PhotoBase = {
         id: remixId,
         userId: user.id,
         authorName: user.name,
         title: `Remix de ${basePhoto.title}`,
-        imageUrl: dataUrl,
+        imageUrl: finalImageUrl,
+        storagePath: storagePath,
         tags: Array.from(new Set([...basePhoto.tags, 'Remix', 'Quebrada'])),
         vibeCount: 1,
         type: 'remix',

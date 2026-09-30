@@ -232,6 +232,7 @@ export const ExploreHub: React.FC<ExploreHubProps> = ({
             photos={photos}
             users={users}
             currentUser={currentUser}
+            comments={comments}
             onRequireLogin={onRequireLogin}
             onOpenComments={(photo) => onOpenComments(photo)}
           />
