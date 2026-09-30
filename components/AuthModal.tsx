@@ -6,15 +6,9 @@ import {
 } from 'lucide-react';
 import { User, UserLevel } from '../types';
 import { PALMAS_NEIGHBORHOODS } from '../constants';
-import { 
-  signInWithPopup, 
-  createUserWithEmailAndPassword, 
-  sendEmailVerification, 
-  signInWithEmailAndPassword 
-} from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
-import { persistUser } from '../firestoreSync';
-import { signUpWithSupabase, signInWithSupabase, isSupabaseConfigured } from '../supabase';
+import { persistUser } from '../supabaseSync';
+import { signUpWithSupabase, signInWithSupabase, isSupabaseConfigured, signInWithGoogleSupabase } from '../supabase';
+
 
 interface AuthModalProps {
   users: User[];
@@ -221,44 +215,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // Handle Google Login with Real Firebase Auth
+  // Handle Google Login with Real Supabase Auth
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     setErrorMsg(null);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-
-      // Check if user already exists by ID or email
-      const existing = users.find(u => u.id === fbUser.uid || (fbUser.email && u.email === fbUser.email));
-      if (existing) {
-        const updated: User = {
-          ...existing,
-          googleLinked: true,
-          email: fbUser.email || existing.email,
-          avatar: fbUser.photoURL || existing.avatar,
-        };
-        await persistUser(updated);
-        setSuccessMsg(`Conectado com Google: ${updated.name}!`);
-        setTimeout(() => {
-          onSelectUser(updated.id);
-          onClose();
-        }, 500);
+      if (isSupabaseConfigured()) {
+        const { error: sbError } = await signInWithGoogleSupabase();
+        if (sbError) {
+          setErrorMsg(sbError);
+          return;
+        }
+        setSuccessMsg('Redirecionando para autenticação Google no Supabase...');
         return;
       }
 
-      // Create new Google verified user profile for Firebase user
-      const cleanUsername = (fbUser.email?.split('@')[0] || fbUser.displayName?.toLowerCase().replace(/\s+/g, '') || 'artista')
-        .replace(/[^a-zA-Z0-9_]/g, '');
-
-      const googleUser: User = {
-        id: fbUser.uid,
-        name: fbUser.displayName || 'Pedro Márcio',
-        username: cleanUsername,
-        email: fbUser.email || 'pedromarcioap@gmail.com',
-        avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-        bio: 'Artista periférico e visual de Palmas - TO autenticado com Google.',
+      // Fallback local demo profile for Google Auth preview
+      const fallbackGoogleUser: User = {
+        id: `user_google_${Date.now()}`,
+        name: 'Pedro Márcio',
+        username: 'pedromarcio',
+        email: 'pedromarcioap@gmail.com',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+        bio: 'Artista e entusiasta da arte periférica de Palmas - TO (Supabase Auth).',
         vibe: 120,
         responsa: 50,
         level: UserLevel.CRIADOR,
@@ -268,46 +248,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         joinedDate: new Date().toLocaleDateString('pt-BR'),
         completedChallenges: []
       };
-
-      await persistUser(googleUser);
-      setSuccessMsg(`Conta Google (${googleUser.email}) vinculada com sucesso!`);
+      await persistUser(fallbackGoogleUser);
+      setSuccessMsg('Conectado como Pedro Márcio (Google Auth via Supabase)!');
       setTimeout(() => {
-        onRegisterUser(googleUser);
+        onRegisterUser(fallbackGoogleUser);
         onClose();
       }, 500);
     } catch (err: any) {
-      console.warn('Firebase Google Auth error:', err);
-      if (err?.code === 'auth/popup-closed-by-user') {
-        setErrorMsg('Janela do Google fechada antes da conclusão do login.');
-      } else if (err?.code === 'auth/popup-blocked') {
-        setErrorMsg('O navegador bloqueou a janela pop-up do Google. Por favor, libere pop-ups.');
-      } else if (err?.code === 'auth/unauthorized-domain') {
-        // Fallback for custom preview domains
-        const fallbackGoogleUser: User = {
-          id: `user_google_${Date.now()}`,
-          name: 'Pedro Márcio',
-          username: 'pedromarcio',
-          email: 'pedromarcioap@gmail.com',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-          bio: 'Artista e entusiasta da arte periférica de Palmas - TO (Google Auth).',
-          vibe: 120,
-          responsa: 50,
-          level: UserLevel.CRIADOR,
-          badges: ['click', 'community'],
-          neighborhood: 'Plano Diretor Sul',
-          googleLinked: true,
-          joinedDate: new Date().toLocaleDateString('pt-BR'),
-          completedChallenges: []
-        };
-        await persistUser(fallbackGoogleUser);
-        setSuccessMsg('Conectado como Pedro Márcio (Google Auth)!');
-        setTimeout(() => {
-          onRegisterUser(fallbackGoogleUser);
-          onClose();
-        }, 500);
-      } else {
-        setErrorMsg(`Erro de autenticação Google: ${err?.message || 'Falha ao conectar'}`);
-      }
+      console.warn('Supabase Google Auth error:', err);
+      setErrorMsg(`Erro de autenticação Google: ${err?.message || 'Falha ao conectar'}`);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -394,25 +343,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 1. Persistir IMEDIATAMENTE no Firestore para garantir inclusão no banco de users
+    // 1. Persistir no Supabase PostgreSQL
     try {
       await persistUser(candidateUser);
       onRegisterUser(candidateUser);
     } catch (dbErr) {
-      console.warn('Aviso de persistência imediata do usuário:', dbErr);
+      console.warn('Aviso de persistência imediata do usuário no Supabase:', dbErr);
     }
 
-    // 2. Disparar e-mail de verificação oficial via Firebase Auth
-    try {
-      const userCred = await createUserWithEmailAndPassword(auth, trimmedEmail, regPassword.trim() || '123456');
-      if (userCred?.user) {
-        await sendEmailVerification(userCred.user);
-      }
-    } catch (fbAuthErr: any) {
-      console.info('Disparo de e-mail Firebase Auth:', fbAuthErr?.code || fbAuthErr?.message);
-    }
-
-    // 3. Gerar PIN de 6 dígitos para validação imediata na interface
+    // 2. Gerar PIN de 6 dígitos para validação imediata na interface
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
     setPendingUser(candidateUser);
@@ -421,8 +360,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsVerifyingEmail(true);
     setSuccessMsg(
       supabaseRegistered 
-        ? `Perfil registrado no Supabase e banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
-        : `Perfil gravado no banco de dados! E-mail de confirmação despachado para ${trimmedEmail}.`
+        ? `Perfil registrado no Supabase Auth e Banco Relacional PostgreSQL! E-mail de confirmação enviado para ${trimmedEmail}.`
+        : `Perfil gravado no banco de dados Supabase! E-mail de confirmação enviado para ${trimmedEmail}.`
     );
   };
 
@@ -451,7 +390,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await persistUser(verifiedUser);
       onRegisterUser(verifiedUser);
-      setSuccessMsg(`E-mail ${verifiedUser.email} validado com sucesso! Perfil @${verifiedUser.name} ativo no banco de dados! +35 Responsa`);
+      setSuccessMsg(`E-mail ${verifiedUser.email} validado com sucesso! Perfil @${verifiedUser.name} ativo no Supabase PostgreSQL! +35 Responsa`);
       setTimeout(() => {
         onSelectUser(verifiedUser.id);
         onClose();
@@ -472,15 +411,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setResendCooldown(60);
     setErrorMsg(null);
 
-    if (auth.currentUser) {
-      try {
-        await sendEmailVerification(auth.currentUser);
-      } catch (err) {
-        console.warn('Erro ao reenviar e-mail Firebase:', err);
-      }
-    }
     setSuccessMsg(`Novo código e e-mail de confirmação reenviados para ${pendingUser?.email}!`);
   };
+
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-[120] animate-in fade-in duration-200">

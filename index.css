@@ -1,6 +1,13 @@
 /* UPMM Base Styles & Theme Colors */
 :root {
   color-scheme: dark;
+  --upmm-primary: #FFB800;
+  --upmm-accent-yellow: #FACC15;
+  --upmm-accent-orange: #FF5722;
+  --upmm-accent-cyan: #00E5FF;
+  --upmm-surface: #1C1B19;
+  --upmm-surface-alt: #242220;
+  --upmm-border: #3E3A35;
 }
 
 /* Global Custom Scrollbar */
@@ -108,3 +115,18 @@ img {
   display: block;
 }
 
+/* Native <dialog> used for the Quick Create bottom sheet */
+.quick-create-dialog {
+  border: none;
+  outline: none;
+  overflow: visible;
+}
+
+.quick-create-dialog[open] {
+  display: flex;
+}
+
+.quick-create-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(2px);
+}

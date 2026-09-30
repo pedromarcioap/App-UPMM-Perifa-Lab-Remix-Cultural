@@ -1,22 +1,26 @@
 
-import { 
-  User, 
-  PhotoBase, 
-  UserLevel, 
-  Sticker, 
-  Badge, 
-  GraffitiSpot, 
-  Comment, 
+import {
+  User,
+  PhotoBase,
+  UserLevel,
+  Sticker,
+  Badge,
+  GraffitiSpot,
+  Comment,
   WeeklyChallenge,
   BrandedChallenge,
-  BrandedAssetPack,
-  SponsorProfile,
-  AssetItem
+  BrandedAssetPack
 } from './types';
 
 export const COLORS = {
   primary: '#FFB800',
+  accentYellow: '#FACC15',
+  accentOrange: '#FF5722',
+  accentCyan: '#00E5FF',
   dark: '#2D2A26',
+  surface: '#1C1B19',
+  surfaceAlt: '#242220',
+  border: '#3E3A35',
   black: '#000000',
   beige: '#FDFCFB',
   white: '#FFFFFF'
@@ -269,9 +273,9 @@ export const INITIAL_PHOTOS: PhotoBase[] = [
     battleWins: 28,
     battleLosses: 12,
     battleStreak: 2,
-    location: { 
-      lat: -10.3392, 
-      lng: -48.2865, 
+    location: {
+      lat: -10.3392,
+      lng: -48.2865,
       neighborhood: 'Setor Taquari',
       address: 'Av. LO-19 com Alameda 05, Setor Taquari, Palmas - TO, 77066-024',
       landmark: 'Mirante Natural do Taquari'
@@ -289,9 +293,9 @@ export const INITIAL_PHOTOS: PhotoBase[] = [
     battleWins: 18,
     battleLosses: 14,
     battleStreak: 1,
-    location: { 
-      lat: -10.2741, 
-      lng: -48.3182, 
+    location: {
+      lat: -10.2741,
+      lng: -48.3182,
       neighborhood: 'Jardim Aureny III',
       address: 'Av. Transversal, nº 210, Jardim Aureny III, Palmas - TO, 77054-610',
       landmark: 'Próximo à Feira Coberta do Aureny III'
@@ -310,9 +314,9 @@ export const INITIAL_PHOTOS: PhotoBase[] = [
     battleWins: 35,
     battleLosses: 10,
     battleStreak: 3,
-    location: { 
-      lat: -10.3235, 
-      lng: -48.3038, 
+    location: {
+      lat: -10.3235,
+      lng: -48.3038,
       neighborhood: 'Taquaralto',
       address: 'Av. Tocantins, Quadra 32, Taquaralto, Palmas - TO, 77064-580',
       landmark: 'Corredor Cultural Taquaralto'
@@ -330,9 +334,9 @@ export const INITIAL_PHOTOS: PhotoBase[] = [
     battleWins: 14,
     battleLosses: 16,
     battleStreak: 0,
-    location: { 
-      lat: -10.2982, 
-      lng: -48.3125, 
+    location: {
+      lat: -10.2982,
+      lng: -48.3125,
       neighborhood: 'Morada do Sol',
       address: 'Rua 15 esquina com Av. Contorno, Setor Morada do Sol, Palmas - TO, 77058-230',
       landmark: 'Praça da Juventude Morada do Sol'
@@ -467,131 +471,131 @@ export const INITIAL_PHOTOS: PhotoBase[] = [
 ];
 
 export const STICKERS: Sticker[] = [
-  { 
-    id: 's1', 
-    name: 'Street Tag', 
+  {
+    id: 's1',
+    name: 'Street Tag',
     category: 'tag',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M15 80 L85 80 L80 45 L65 65 L50 25 L35 65 L20 45 Z" fill="%23FFB800" stroke="%232D2A26" stroke-width="5" stroke-linejoin="round"/><circle cx="50" cy="18" r="6" fill="%23FFB800"/><circle cx="20" cy="38" r="5" fill="%23FFB800"/><circle cx="80" cy="38" r="5" fill="%23FFB800"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M15 80 L85 80 L80 45 L65 65 L50 25 L35 65 L20 45 Z" fill="%23FFB800" stroke="%232D2A26" stroke-width="5" stroke-linejoin="round"/><circle cx="50" cy="18" r="6" fill="%23FFB800"/><circle cx="20" cy="38" r="5" fill="%23FFB800"/><circle cx="80" cy="38" r="5" fill="%23FFB800"/></svg>'
   },
-  { 
-    id: 's_tag_pmw', 
-    name: 'Tag PMW 063', 
+  {
+    id: 's_tag_pmw',
+    name: 'Tag PMW 063',
     category: 'tag',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60"><rect width="120" height="60" rx="12" fill="%232D2A26"/><text x="60" y="38" font-family="sans-serif" font-weight="900" font-size="22" fill="%23FFB800" text-anchor="middle" letter-spacing="2">PMW 063</text><circle cx="15" cy="15" r="3" fill="%23FFB800"/><circle cx="105" cy="15" r="3" fill="%23FFB800"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60"><rect width="120" height="60" rx="12" fill="%232D2A26"/><text x="60" y="38" font-family="sans-serif" font-weight="900" font-size="22" fill="%23FFB800" text-anchor="middle" letter-spacing="2">PMW 063</text><circle cx="15" cy="15" r="3" fill="%23FFB800"/><circle cx="105" cy="15" r="3" fill="%23FFB800"/></svg>'
   },
-  { 
-    id: 's_cria_sul', 
-    name: 'Cria da Sul', 
+  {
+    id: 's_cria_sul',
+    name: 'Cria da Sul',
     category: 'tag',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 50"><path d="M5 10 L115 5 L110 45 L10 40 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="3"/><text x="60" y="32" font-family="sans-serif" font-weight="900" font-size="16" fill="%23FFFFFF" text-anchor="middle">CRIA DA SUL</text></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 50"><path d="M5 10 L115 5 L110 45 L10 40 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="3"/><text x="60" y="32" font-family="sans-serif" font-weight="900" font-size="16" fill="%23FFFFFF" text-anchor="middle">CRIA DA SUL</text></svg>'
   },
-  { 
-    id: 's_graffiti_king', 
-    name: 'Graffiti King', 
+  {
+    id: 's_graffiti_king',
+    name: 'Graffiti King',
     category: 'tag',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 75 L80 75 L90 35 L68 55 L50 20 L32 55 L10 35 Z" fill="%23FFD700" stroke="%232D2A26" stroke-width="4"/><circle cx="50" cy="12" r="5" fill="%23FF5722"/><circle cx="10" cy="27" r="4" fill="%23FF5722"/><circle cx="90" cy="27" r="4" fill="%23FF5722"/><text x="50" y="70" font-family="sans-serif" font-weight="900" font-size="11" fill="%232D2A26" text-anchor="middle">KING</text></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 75 L80 75 L90 35 L68 55 L50 20 L32 55 L10 35 Z" fill="%23FFD700" stroke="%232D2A26" stroke-width="4"/><circle cx="50" cy="12" r="5" fill="%23FF5722"/><circle cx="10" cy="27" r="4" fill="%23FF5722"/><circle cx="90" cy="27" r="4" fill="%23FF5722"/><text x="50" y="70" font-family="sans-serif" font-weight="900" font-size="11" fill="%232D2A26" text-anchor="middle">KING</text></svg>'
   },
-  { 
-    id: 's2', 
-    name: 'Spray Blast', 
+  {
+    id: 's2',
+    name: 'Spray Blast',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="35" y="38" width="30" height="52" rx="6" fill="%232D2A26"/><rect x="42" y="24" width="16" height="12" rx="3" fill="%23FFB800"/><rect x="46" y="16" width="8" height="8" rx="2" fill="%232D2A26"/><path d="M54 20 L80 10 M54 22 L85 20 M54 24 L78 30" stroke="%23FFB800" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="64" r="7" fill="%23FFB800"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="35" y="38" width="30" height="52" rx="6" fill="%232D2A26"/><rect x="42" y="24" width="16" height="12" rx="3" fill="%23FFB800"/><rect x="46" y="16" width="8" height="8" rx="2" fill="%232D2A26"/><path d="M54 20 L80 10 M54 22 L85 20 M54 24 L78 30" stroke="%23FFB800" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="64" r="7" fill="%23FFB800"/></svg>'
   },
-  { 
-    id: 's_lata_spray', 
-    name: 'Lata de Spray', 
+  {
+    id: 's_lata_spray',
+    name: 'Lata de Spray',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="30" y="32" width="40" height="58" rx="8" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><rect x="40" y="18" width="20" height="14" rx="4" fill="%232D2A26"/><rect x="44" y="10" width="12" height="8" rx="2" fill="%23FF5722"/><line x1="30" y1="56" x2="70" y2="56" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="74" r="6" fill="%232D2A26"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="30" y="32" width="40" height="58" rx="8" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><rect x="40" y="18" width="20" height="14" rx="4" fill="%232D2A26"/><rect x="44" y="10" width="12" height="8" rx="2" fill="%23FF5722"/><line x1="30" y1="56" x2="70" y2="56" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="74" r="6" fill="%232D2A26"/></svg>'
   },
-  { 
-    id: 's_drip', 
-    name: 'Drip de Tinta', 
+  {
+    id: 's_drip',
+    name: 'Drip de Tinta',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M10 20 Q30 25 50 20 T90 20 L90 35 C85 45 78 55 75 75 C72 88 64 88 64 70 C64 50 58 45 52 65 C48 80 40 85 38 65 C35 50 30 40 22 55 C18 62 12 55 10 35 Z" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M10 20 Q30 25 50 20 T90 20 L90 35 C85 45 78 55 75 75 C72 88 64 88 64 70 C64 50 58 45 52 65 C48 80 40 85 38 65 C35 50 30 40 22 55 C18 62 12 55 10 35 Z" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/></svg>'
   },
-  { 
-    id: 's_fat_cap', 
-    name: 'Fat Cap NY', 
+  {
+    id: 's_fat_cap',
+    name: 'Fat Cap NY',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="%23FFFFFF" stroke="%232D2A26" stroke-width="6"/><circle cx="50" cy="50" r="24" fill="%23FF5722"/><circle cx="50" cy="50" r="10" fill="%232D2A26"/><line x1="50" y1="12" x2="50" y2="26" stroke="%232D2A26" stroke-width="4"/><line x1="50" y1="74" x2="50" y2="88" stroke="%232D2A26" stroke-width="4"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="%23FFFFFF" stroke="%232D2A26" stroke-width="6"/><circle cx="50" cy="50" r="24" fill="%23FF5722"/><circle cx="50" cy="50" r="10" fill="%232D2A26"/><line x1="50" y1="12" x2="50" y2="26" stroke="%232D2A26" stroke-width="4"/><line x1="50" y1="74" x2="50" y2="88" stroke="%232D2A26" stroke-width="4"/></svg>'
   },
-  { 
-    id: 's_rolo_pintura', 
-    name: 'Rolo de Pintura', 
+  {
+    id: 's_rolo_pintura',
+    name: 'Rolo de Pintura',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="25" y="15" width="50" height="24" rx="6" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><path d="M75 27 L85 27 L85 55 L55 55 L55 85" fill="none" stroke="%232D2A26" stroke-width="5" stroke-linecap="round"/><rect x="50" y="65" width="10" height="25" rx="3" fill="%23FF5722" stroke="%232D2A26" stroke-width="3"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="25" y="15" width="50" height="24" rx="6" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><path d="M75 27 L85 27 L85 55 L55 55 L55 85" fill="none" stroke="%232D2A26" stroke-width="5" stroke-linecap="round"/><rect x="50" y="65" width="10" height="25" rx="3" fill="%23FF5722" stroke="%232D2A26" stroke-width="3"/></svg>'
   },
-  { 
-    id: 's_sol_palmas', 
-    name: 'Sol de Palmas', 
+  {
+    id: 's_sol_palmas',
+    name: 'Sol de Palmas',
     category: 'cerrado',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="24" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><path d="M50 10 L50 20 M50 80 L50 90 M10 50 L20 50 M80 50 L90 50 M22 22 L29 29 M71 71 L78 78 M78 22 L71 29 M29 71 L22 78" stroke="%23FF5722" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="14" fill="%23FF5722"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="24" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><path d="M50 10 L50 20 M50 80 L50 90 M10 50 L20 50 M80 50 L90 50 M22 22 L29 29 M71 71 L78 78 M78 22 L71 29 M29 71 L22 78" stroke="%23FF5722" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="14" fill="%23FF5722"/></svg>'
   },
-  { 
-    id: 's_buriti', 
-    name: 'Palmeira Buriti', 
+  {
+    id: 's_buriti',
+    name: 'Palmeira Buriti',
     category: 'cerrado',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 88 L50 45" stroke="%238B5A2B" stroke-width="6" stroke-linecap="round"/><path d="M50 45 C40 25 15 35 12 40" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C35 15 45 10 50 10 C55 10 65 15 50 45" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C60 25 85 35 88 40" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C30 35 25 50 22 55" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C70 35 75 50 78 55" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 88 L50 45" stroke="%238B5A2B" stroke-width="6" stroke-linecap="round"/><path d="M50 45 C40 25 15 35 12 40" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C35 15 45 10 50 10 C55 10 65 15 50 45" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C60 25 85 35 88 40" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C30 35 25 50 22 55" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/><path d="M50 45 C70 35 75 50 78 55" fill="none" stroke="%232E7D32" stroke-width="5" stroke-linecap="round"/></svg>'
   },
-  { 
-    id: 's_ipe_amarelo', 
-    name: 'Flor do Ipê', 
+  {
+    id: 's_ipe_amarelo',
+    name: 'Flor do Ipê',
     category: 'cerrado',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="35" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="65" cy="48" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="58" cy="68" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="42" cy="68" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="35" cy="48" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="52" r="10" fill="%23FF5722"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="35" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="65" cy="48" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="58" cy="68" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="42" cy="68" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="35" cy="48" r="15" fill="%23FFD700" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="52" r="10" fill="%23FF5722"/></svg>'
   },
-  { 
-    id: 's_coracao_cerrado', 
-    name: 'Coração Cerrado', 
+  {
+    id: 's_coracao_cerrado',
+    name: 'Coração Cerrado',
     category: 'cerrado',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 85 C15 55 10 25 35 18 C45 15 50 25 50 25 C50 25 55 15 65 18 C90 25 85 55 50 85 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="4"/><path d="M50 30 L50 70 M35 45 L65 45" stroke="%23FFB800" stroke-width="4" stroke-linecap="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 85 C15 55 10 25 35 18 C45 15 50 25 50 25 C50 25 55 15 65 18 C90 25 85 55 50 85 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="4"/><path d="M50 30 L50 70 M35 45 L65 45" stroke="%23FFB800" stroke-width="4" stroke-linecap="round"/></svg>'
   },
-  { 
-    id: 's3', 
-    name: 'Quebrada Star', 
+  {
+    id: 's3',
+    name: 'Quebrada Star',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 63,38 94,38 69,57 78,88 50,70 22,88 31,57 6,38 37,38" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><polygon points="50,26 58,44 76,44 62,56 67,75 50,63 33,75 38,56 24,44 42,44" fill="%23FF5722"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 63,38 94,38 69,57 78,88 50,70 22,88 31,57 6,38 37,38" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><polygon points="50,26 58,44 76,44 62,56 67,75 50,63 33,75 38,56 24,44 42,44" fill="%23FF5722"/></svg>'
   },
-  { 
-    id: 's4', 
-    name: 'Raio Vibe', 
+  {
+    id: 's4',
+    name: 'Raio Vibe',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="55,10 25,52 48,52 40,90 75,44 52,44" fill="%23FFB800" stroke="%232D2A26" stroke-width="4" stroke-linejoin="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="55,10 25,52 48,52 40,90 75,44 52,44" fill="%23FFB800" stroke="%232D2A26" stroke-width="4" stroke-linejoin="round"/></svg>'
   },
-  { 
-    id: 's_boombox', 
-    name: 'Boombox 90s', 
+  {
+    id: 's_boombox',
+    name: 'Boombox 90s',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="35" width="70" height="45" rx="6" fill="%232D2A26" stroke="%23FFB800" stroke-width="3"/><path d="M30 35 L30 22 L70 22 L70 35" fill="none" stroke="%23FFB800" stroke-width="4"/><circle cx="32" cy="58" r="14" fill="%23FF5722" stroke="%23FFFFFF" stroke-width="2"/><circle cx="68" cy="58" r="14" fill="%23FF5722" stroke="%23FFFFFF" stroke-width="2"/><rect x="46" y="48" width="8" height="18" fill="%23FFB800"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="35" width="70" height="45" rx="6" fill="%232D2A26" stroke="%23FFB800" stroke-width="3"/><path d="M30 35 L30 22 L70 22 L70 35" fill="none" stroke="%23FFB800" stroke-width="4"/><circle cx="32" cy="58" r="14" fill="%23FF5722" stroke="%23FFFFFF" stroke-width="2"/><circle cx="68" cy="58" r="14" fill="%23FF5722" stroke="%23FFFFFF" stroke-width="2"/><rect x="46" y="48" width="8" height="18" fill="%23FFB800"/></svg>'
   },
-  { 
-    id: 's_fita_k7', 
-    name: 'Fita K7 HipHop', 
+  {
+    id: 's_fita_k7',
+    name: 'Fita K7 HipHop',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70"><rect x="10" y="10" width="80" height="50" rx="6" fill="%232D2A26" stroke="%23FFB800" stroke-width="3"/><rect x="22" y="20" width="56" height="25" rx="3" fill="%23FFFFFF"/><circle cx="36" cy="32" r="6" fill="%232D2A26"/><circle cx="64" cy="32" r="6" fill="%232D2A26"/><polygon points="26,60 32,48 68,48 74,60" fill="%23FF5722"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70"><rect x="10" y="10" width="80" height="50" rx="6" fill="%232D2A26" stroke="%23FFB800" stroke-width="3"/><rect x="22" y="20" width="56" height="25" rx="3" fill="%23FFFFFF"/><circle cx="36" cy="32" r="6" fill="%232D2A26"/><circle cx="64" cy="32" r="6" fill="%232D2A26"/><polygon points="26,60 32,48 68,48 74,60" fill="%23FF5722"/></svg>'
   },
-  { 
-    id: 's_megafone', 
-    name: 'Megafone Perifa', 
+  {
+    id: 's_megafone',
+    name: 'Megafone Perifa',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="25,40 55,20 55,80 25,60" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/><rect x="15" y="40" width="10" height="20" rx="3" fill="%23FF5722"/><path d="M55 35 L45 70 L35 65" fill="none" stroke="%232D2A26" stroke-width="4"/><path d="M65 35 Q75 50 65 65 M72 25 Q88 50 72 75" fill="none" stroke="%23FF5722" stroke-width="4" stroke-linecap="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="25,40 55,20 55,80 25,60" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/><rect x="15" y="40" width="10" height="20" rx="3" fill="%23FF5722"/><path d="M55 35 L45 70 L35 65" fill="none" stroke="%232D2A26" stroke-width="4"/><path d="M65 35 Q75 50 65 65 M72 25 Q88 50 72 75" fill="none" stroke="%23FF5722" stroke-width="4" stroke-linecap="round"/></svg>'
   },
-  { 
-    id: 's_selo_responsa', 
-    name: 'Selo 100% Responsa', 
+  {
+    id: 's_selo_responsa',
+    name: 'Selo 100% Responsa',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="%23FFB800" stroke-width="5" stroke-dasharray="6,4"/><circle cx="50" cy="50" r="32" fill="%232D2A26"/><text x="50" y="46" font-family="sans-serif" font-weight="900" font-size="12" fill="%23FFB800" text-anchor="middle">100%</text><text x="50" y="60" font-family="sans-serif" font-weight="900" font-size="8" fill="%23FFFFFF" text-anchor="middle">RESPONSA</text></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="%23FFB800" stroke-width="5" stroke-dasharray="6,4"/><circle cx="50" cy="50" r="32" fill="%232D2A26"/><text x="50" y="46" font-family="sans-serif" font-weight="900" font-size="12" fill="%23FFB800" text-anchor="middle">100%</text><text x="50" y="60" font-family="sans-serif" font-weight="900" font-size="8" fill="%23FFFFFF" text-anchor="middle">RESPONSA</text></svg>'
   },
-  { 
-    id: 's_seta_street', 
-    name: 'Seta Graffiti', 
+  {
+    id: 's_seta_street',
+    name: 'Seta Graffiti',
     category: 'shapes',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><path d="M10 25 L60 25 L50 10 L90 30 L50 50 L60 35 L10 35 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="3" stroke-linejoin="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><path d="M10 25 L60 25 L50 10 L90 30 L50 50 L60 35 L10 35 Z" fill="%23FF5722" stroke="%232D2A26" stroke-width="3" stroke-linejoin="round"/></svg>'
   },
-  { 
-    id: 's_olho_visao', 
-    name: 'Olho da Visão', 
+  {
+    id: 's_olho_visao',
+    name: 'Olho da Visão',
     category: 'shapes',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><path d="M10 30 Q50 5 90 30 Q50 55 10 30 Z" fill="%23FFFFFF" stroke="%232D2A26" stroke-width="4"/><circle cx="50" cy="30" r="14" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="30" r="6" fill="%232D2A26"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><path d="M10 30 Q50 5 90 30 Q50 55 10 30 Z" fill="%23FFFFFF" stroke="%232D2A26" stroke-width="4"/><circle cx="50" cy="30" r="14" fill="%23FFB800" stroke="%232D2A26" stroke-width="3"/><circle cx="50" cy="30" r="6" fill="%232D2A26"/></svg>'
   },
   {
     id: 's_tag_taquaralto',
@@ -746,29 +750,29 @@ export const STICKERS: Sticker[] = [
 ];
 
 export const ANIMATED_STICKERS: Sticker[] = [
-  { 
-    id: 'as1', 
-    name: 'Chama Viva em Loop', 
+  {
+    id: 'as1',
+    name: 'Chama Viva em Loop',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes flamePulse{0%,100%{transform:scale(1) translateY(0);fill:%23FF5722;}50%{transform:scale(1.08) translateY(-4px);fill:%23FF9800;}}@keyframes innerFlame{0%,100%{transform:scale(0.9);fill:%23FFEB3B;}50%{transform:scale(1.1);fill:%23FFD700;}}.f-out{transform-origin:50%25 90%25;animation:flamePulse 0.8s infinite ease-in-out;}.f-in{transform-origin:50%25 80%25;animation:innerFlame 0.8s infinite ease-in-out;}</style><path class="f-out" d="M50 15 C40 35 25 45 25 65 C25 80 35 90 50 90 C65 90 75 80 75 65 C75 45 60 35 50 15 Z" stroke="%232D2A26" stroke-width="4"/><path class="f-in" d="M50 40 C45 52 38 60 38 72 C38 80 43 85 50 85 C57 85 62 80 62 72 C62 60 55 52 50 40 Z"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes flamePulse{0%,100%{transform:scale(1) translateY(0);fill:%23FF5722;}50%{transform:scale(1.08) translateY(-4px);fill:%23FF9800;}}@keyframes innerFlame{0%,100%{transform:scale(0.9);fill:%23FFEB3B;}50%{transform:scale(1.1);fill:%23FFD700;}}.f-out{transform-origin:50%25 90%25;animation:flamePulse 0.8s infinite ease-in-out;}.f-in{transform-origin:50%25 80%25;animation:innerFlame 0.8s infinite ease-in-out;}</style><path class="f-out" d="M50 15 C40 35 25 45 25 65 C25 80 35 90 50 90 C65 90 75 80 75 65 C75 45 60 35 50 15 Z" stroke="%232D2A26" stroke-width="4"/><path class="f-in" d="M50 40 C45 52 38 60 38 72 C38 80 43 85 50 85 C57 85 62 80 62 72 C62 60 55 52 50 40 Z"/></svg>'
   },
-  { 
-    id: 'as2', 
-    name: 'Raio Neon Elétrico', 
+  {
+    id: 'as2',
+    name: 'Raio Neon Elétrico',
     category: 'urban',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes boltGlow{0%,100%{filter:drop-shadow(0 0 2px %23FFD700);transform:scale(0.96);}50%{filter:drop-shadow(0 0 12px %23FF5722);transform:scale(1.06);}}.bolt{transform-origin:50%25 50%25;animation:boltGlow 0.6s infinite ease-in-out;}</style><polygon class="bolt" points="56,8 24,54 48,54 40,92 78,44 54,44" fill="%23FFEB3B" stroke="%23FF5722" stroke-width="4" stroke-linejoin="round"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes boltGlow{0%,100%{filter:drop-shadow(0 0 2px %23FFD700);transform:scale(0.96);}50%{filter:drop-shadow(0 0 12px %23FF5722);transform:scale(1.06);}}.bolt{transform-origin:50%25 50%25;animation:boltGlow 0.6s infinite ease-in-out;}</style><polygon class="bolt" points="56,8 24,54 48,54 40,92 78,44 54,44" fill="%23FFEB3B" stroke="%23FF5722" stroke-width="4" stroke-linejoin="round"/></svg>'
   },
-  { 
-    id: 'as3', 
-    name: 'Spray Glow & Névoa', 
+  {
+    id: 'as3',
+    name: 'Spray Glow & Névoa',
     category: 'spray',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes sprayMist{0%,100%{opacity:0.3;transform:translateY(0);}50%{opacity:1;transform:translateY(-6px);}}.mist{animation:sprayMist 0.7s infinite alternate;}</style><rect x="35" y="35" width="30" height="52" rx="6" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><rect x="42" y="22" width="16" height="13" rx="3" fill="%23FF5722"/><circle cx="50" cy="62" r="8" fill="%23FFFFFF"/><g class="mist"><circle cx="50" cy="12" r="4" fill="%23FFB800"/><circle cx="62" cy="14" r="3" fill="%23FF5722"/><circle cx="38" cy="14" r="3" fill="%23FF5722"/></g></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes sprayMist{0%,100%{opacity:0.3;transform:translateY(0);}50%{opacity:1;transform:translateY(-6px);}}.mist{animation:sprayMist 0.7s infinite alternate;}</style><rect x="35" y="35" width="30" height="52" rx="6" fill="%23FFB800" stroke="%232D2A26" stroke-width="4"/><rect x="42" y="22" width="16" height="13" rx="3" fill="%23FF5722"/><circle cx="50" cy="62" r="8" fill="%23FFFFFF"/><g class="mist"><circle cx="50" cy="12" r="4" fill="%23FFB800"/><circle cx="62" cy="14" r="3" fill="%23FF5722"/><circle cx="38" cy="14" r="3" fill="%23FF5722"/></g></svg>'
   },
-  { 
-    id: 'as4', 
-    name: 'Coração Pulsar 808', 
+  {
+    id: 'as4',
+    name: 'Coração Pulsar 808',
     category: 'shapes',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes heartBeat{0%,100%{transform:scale(0.92);}15%{transform:scale(1.15);}30%{transform:scale(0.96);}45%{transform:scale(1.08);}}@keyframes waveOut{0%{r:20;opacity:0.9;}100%{r:46;opacity:0;}}.hb{transform-origin:50%25 50%25;animation:heartBeat 1s infinite cubic-bezier(0.25, 1, 0.5, 1);}.pulse-ring{animation:waveOut 1s infinite ease-out;}</style><circle class="pulse-ring" cx="50" cy="50" r="20" fill="none" stroke="%23E91E63" stroke-width="3"/><path class="hb" d="M50 85 C20 58 12 30 35 20 C46 16 50 25 50 25 C50 25 54 16 65 20 C88 30 80 58 50 85 Z" fill="%23E91E63" stroke="%232D2A26" stroke-width="4"/><circle cx="40" cy="35" r="4" fill="%23FFFFFF"/></svg>' 
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@keyframes heartBeat{0%,100%{transform:scale(0.92);}15%{transform:scale(1.15);}30%{transform:scale(0.96);}45%{transform:scale(1.08);}}@keyframes waveOut{0%{r:20;opacity:0.9;}100%{r:46;opacity:0;}}.hb{transform-origin:50%25 50%25;animation:heartBeat 1s infinite cubic-bezier(0.25, 1, 0.5, 1);}.pulse-ring{animation:waveOut 1s infinite ease-out;}</style><circle class="pulse-ring" cx="50" cy="50" r="20" fill="none" stroke="%23E91E63" stroke-width="3"/><path class="hb" d="M50 85 C20 58 12 30 35 20 C46 16 50 25 50 25 C50 25 54 16 65 20 C88 30 80 58 50 85 Z" fill="%23E91E63" stroke="%232D2A26" stroke-width="4"/><circle cx="40" cy="35" r="4" fill="%23FFFFFF"/></svg>'
   },
   {
     id: 'as5',

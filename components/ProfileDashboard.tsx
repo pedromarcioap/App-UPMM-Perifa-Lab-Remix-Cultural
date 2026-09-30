@@ -1,33 +1,295 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  Trophy, 
-  ShieldCheck, 
-  Sparkles, 
-  Edit3, 
-  Trash2, 
-  MapPin, 
-  Camera, 
-  Layers, 
-  Sword, 
-  ExternalLink, 
-  CheckCircle2, 
+import {
+  Trophy,
+  ShieldCheck,
+  Sparkles,
+  Edit3,
+  Trash2,
+  MapPin,
+  Camera,
+  Layers,
+  Sword,
+  ExternalLink,
+  CheckCircle2,
   AlertTriangle,
   X,
-  Save,
-  Tag,
-  Instagram,
+  ArrowLeft,
   Plus,
   ArrowRight,
-  Award,
   Upload,
   Bell,
   GitBranch,
   CheckCheck
 } from 'lucide-react';
-import { User, PhotoBase, GraffitiSpot, Badge, UserLevel, RemixNotification } from '../types';
-import { BADGES, PALMAS_NEIGHBORHOODS } from '../constants';
+import { User, PhotoBase, GraffitiSpot, UserLevel, RemixNotification } from '../types';
+import { BADGES } from '../constants';
 import { RemixNotificationModal, RemixNotificationCard } from './RemixNotificationCenter';
+
+type DashboardTabKey = 'bases' | 'remixes' | 'received-remixes' | 'spots' | 'badges' | 'battles';
+
+interface ProfileTabsProps {
+  activeTab: DashboardTabKey;
+  onSelectTab: (tab: DashboardTabKey) => void;
+  basesCount: number;
+  remixesCount: number;
+  notificationsCount: number;
+  spotsCount: number;
+  badgesCount: number;
+  unreadRemixCount: number;
+}
+
+const ProfileTabs: React.FC<ProfileTabsProps> = ({
+  activeTab,
+  onSelectTab,
+  basesCount,
+  remixesCount,
+  notificationsCount,
+  spotsCount,
+  badgesCount,
+  unreadRemixCount
+}) => {
+  const tabClass = (isActive: boolean) =>
+    `px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${isActive
+      ? 'bg-[#2D2A26] text-[#FFB800] shadow-md'
+      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+    }`;
+
+  return (
+    <div className="flex space-x-2 sm:space-x-4 border-b border-gray-100 pb-3 overflow-x-auto no-scrollbar">
+      <button onClick={() => onSelectTab('bases')} className={tabClass(activeTab === 'bases')}>
+        📸 Fotos Base ({basesCount})
+      </button>
+
+      <button onClick={() => onSelectTab('remixes')} className={tabClass(activeTab === 'remixes')}>
+        🎨 Remixes Feitos ({remixesCount})
+      </button>
+
+      <button
+        onClick={() => onSelectTab('received-remixes')}
+        className={`${tabClass(activeTab === 'received-remixes')} flex items-center gap-1.5`}
+      >
+        <Bell size={13} className={unreadRemixCount > 0 ? 'text-[#FF5722]' : ''} />
+        <span>Remixes da sua Arte ({notificationsCount})</span>
+        {unreadRemixCount > 0 && (
+          <span className="bg-[#FF5722] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+            {unreadRemixCount}
+          </span>
+        )}
+      </button>
+
+      <button onClick={() => onSelectTab('spots')} className={tabClass(activeTab === 'spots')}>
+        📍 Muros Mapeados ({spotsCount})
+      </button>
+
+      <button onClick={() => onSelectTab('badges')} className={tabClass(activeTab === 'badges')}>
+        🏆 Todas as Badges ({badgesCount})
+      </button>
+
+      <button onClick={() => onSelectTab('battles')} className={tabClass(activeTab === 'battles')}>
+        ⚔️ Histórico da Arena
+      </button>
+    </div>
+  );
+};
+
+interface ProfileHeaderProps {
+  profileUser: User;
+  isOwner: boolean;
+  totalWins: number;
+  unreadRemixCount: number;
+  onOpenEditProfile: () => void;
+  onOpenNotifications: () => void;
+  onShowAllBadges: () => void;
+}
+
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  profileUser,
+  isOwner,
+  totalWins,
+  unreadRemixCount,
+  onOpenEditProfile,
+  onOpenNotifications,
+  onShowAllBadges
+}) => {
+  return (
+    <div className="bg-[#2D2A26] text-white p-6 sm:p-10 rounded-[3rem] shadow-2xl relative overflow-hidden border border-white/5">
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+        <div className="relative shrink-0">
+          <img
+            src={profileUser.avatar}
+            alt={profileUser.name}
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
+            }}
+            className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-[#FFB800] object-cover shadow-xl"
+          />
+          {isOwner && (
+            <button
+              onClick={onOpenEditProfile}
+              title="Editar foto e perfil"
+              className="absolute bottom-1 right-1 bg-[#FFB800] text-[#2D2A26] p-2.5 rounded-full shadow-lg hover:scale-110 transition"
+            >
+              <Camera size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1 text-center md:text-left space-y-3">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+            <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight">
+              {profileUser.name}
+            </h1>
+            <span className="text-xs bg-[#FFB800] text-[#2D2A26] font-black px-3 py-1 rounded-full uppercase">
+              {profileUser.level}
+            </span>
+            {isOwner && (
+              <span className="text-[9px] bg-white/10 text-gray-300 font-bold px-2 py-0.5 rounded-full uppercase">
+                Meu Perfil
+              </span>
+            )}
+            {isOwner && unreadRemixCount > 0 && (
+              <button
+                type="button"
+                onClick={onOpenNotifications}
+                className="text-[10px] bg-[#FF5722] hover:bg-[#E64A19] text-white font-black px-3 py-1 rounded-full uppercase flex items-center gap-1.5 shadow-md animate-pulse"
+                title="Notificações de novos remixes da sua arte"
+              >
+                <Bell size={12} className="animate-bounce" />
+                <span>{unreadRemixCount} novo{unreadRemixCount === 1 ? '' : 's'} remix{unreadRemixCount === 1 ? '' : 'es'}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-gray-300">
+            <div className="inline-flex items-center gap-1">
+              <MapPin size={13} className="text-[#FFB800]" />
+              <span className="font-bold">{profileUser.neighborhood || 'Palmas - TO'}</span>
+            </div>
+            {profileUser.instagram && (
+              <a
+                href={`https://instagram.com/${profileUser.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 hover:text-[#FFB800] transition"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                </svg>
+                <span>{profileUser.instagram}</span>
+              </a>
+            )}
+          </div>
+
+          <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed">
+            {profileUser.bio}
+          </p>
+
+          {/* Reputation, Vibes, and Actions */}
+          <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+            <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-[#FFB800]" />
+              <span className="text-xs font-black">{profileUser.responsa}</span>
+              <span className="text-[9px] uppercase text-gray-400 font-bold">Responsa</span>
+            </div>
+
+            <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+              <Sparkles size={14} className="text-amber-400" />
+              <span className="text-xs font-black">{profileUser.vibe}</span>
+              <span className="text-[9px] uppercase text-gray-400 font-bold">Vibes</span>
+            </div>
+
+            <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+              <Sword size={14} className="text-red-400" />
+              <span className="text-xs font-black">{totalWins}V</span>
+              <span className="text-[9px] uppercase text-gray-400 font-bold">em Batalhas</span>
+            </div>
+
+            <Link
+              to="/ranking"
+              className="bg-[#FFB800] hover:bg-white text-[#2D2A26] px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1 shadow"
+            >
+              <Trophy size={12} />
+              <span>Ver no Ranking</span>
+            </Link>
+
+            {isOwner && (() => {
+              const buttonClass = unreadRemixCount > 0
+                ? 'bg-[#FF5722] hover:bg-[#E64A19] text-white border-[#FF5722]'
+                : 'bg-white/10 hover:bg-[#FFB800] hover:text-[#2D2A26] text-white border-white/10';
+              return (
+                <button
+                  type="button"
+                  onClick={onOpenNotifications}
+                  className={`relative px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border shadow ${buttonClass}`}
+                  title="Notificações de Remixes das suas Obras Originais"
+                >
+                  <div className="relative">
+                    <Bell size={13} className={unreadRemixCount > 0 ? 'animate-wiggle' : ''} />
+                    {unreadRemixCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#FFB800] rounded-full animate-ping" />
+                    )}
+                  </div>
+                  <span>Notificações</span>
+                  {unreadRemixCount > 0 && (
+                    <span className="bg-[#FFB800] text-[#2D2A26] text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                      {unreadRemixCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })()}
+
+            {isOwner && (
+              <button
+                onClick={onOpenEditProfile}
+                className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-white/10"
+              >
+                <Edit3 size={12} />
+                <span>Editar Dados</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Unlocked Badges Bar */}
+      <div className="mt-8 pt-6 border-t border-white/10">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#FFB800]">
+            Insígnias & Conquistas Desbloqueadas ({profileUser.badges.length})
+          </span>
+          <button
+            onClick={onShowAllBadges}
+            className="text-[10px] text-gray-400 hover:text-white uppercase font-bold transition"
+          >
+            Ver Todas as Badges &rarr;
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {profileUser.badges.map(bId => {
+            const b = BADGES.find(x => x.id === bId) || { id: bId, name: bId, icon: '⭐', description: 'Conquista' };
+            return (
+              <div
+                key={bId}
+                title={`${b.name}: ${b.description}`}
+                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-xl text-gray-100 border border-white/10 transition cursor-help group"
+              >
+                <span className="text-sm group-hover:scale-125 transition-transform">{b.icon}</span>
+                <span className="text-[10px] font-bold">{b.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface ProfileDashboardProps {
   users: User[];
@@ -70,7 +332,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   const isOwner = currentUser?.id === profileUser?.id;
 
   // Active Tab for content management
-  const [activeTab, setActiveTab] = useState<'bases' | 'remixes' | 'received-remixes' | 'spots' | 'badges' | 'battles'>('bases');
+  const [activeTab, setActiveTab] = useState<DashboardTabKey>('bases');
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
 
   // Edit Profile Modal state
@@ -240,13 +502,18 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
     e.preventDefault();
     if (!editName.trim()) return;
 
+    let formattedInstagram: string | undefined;
+    if (editInstagram.trim()) {
+      formattedInstagram = editInstagram.startsWith('@') ? editInstagram : `@${editInstagram}`;
+    }
+
     const updated: User = {
       ...profileUser,
       name: editName.trim(),
       bio: editBio.trim(),
       avatar: editAvatar.trim() || profileUser.avatar,
       neighborhood: editNeighborhood,
-      instagram: editInstagram.trim() ? (editInstagram.startsWith('@') ? editInstagram : `@${editInstagram}`) : undefined,
+      instagram: formattedInstagram,
       level: editLevel
     };
 
@@ -305,6 +572,15 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
   return (
     <div className="space-y-8 pb-12">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-[#242220] hover:bg-[#2D2A26] border border-[#3E3A35] text-white font-black text-xs uppercase tracking-wider rounded-2xl transition cursor-pointer"
+      >
+        <ArrowLeft size={15} />
+        <span>Voltar</span>
+      </button>
+
       {/* Success Notification Banner */}
       {successNotice && (
         <div className="bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-lg flex items-center justify-between text-xs font-black uppercase tracking-wider animate-in fade-in">
@@ -318,177 +594,15 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         </div>
       )}
 
-      {/* Main Profile Header Card */}
-      <div className="bg-[#2D2A26] text-white p-6 sm:p-10 rounded-[3rem] shadow-2xl relative overflow-hidden border border-white/5">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-          <div className="relative shrink-0">
-            <img 
-              src={profileUser.avatar} 
-              alt={profileUser.name}
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
-              }}
-              className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-[#FFB800] object-cover shadow-xl" 
-            />
-            {isOwner && (
-              <button
-                onClick={handleOpenEditProfile}
-                title="Editar foto e perfil"
-                className="absolute bottom-1 right-1 bg-[#FFB800] text-[#2D2A26] p-2.5 rounded-full shadow-lg hover:scale-110 transition"
-              >
-                <Camera size={16} />
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 text-center md:text-left space-y-3">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-              <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight">
-                {profileUser.name}
-              </h1>
-              <span className="text-xs bg-[#FFB800] text-[#2D2A26] font-black px-3 py-1 rounded-full uppercase">
-                {profileUser.level}
-              </span>
-              {isOwner && (
-                <span className="text-[9px] bg-white/10 text-gray-300 font-bold px-2 py-0.5 rounded-full uppercase">
-                  Meu Perfil
-                </span>
-              )}
-              {isOwner && unreadRemixCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsNotificationsModalOpen(true)}
-                  className="text-[10px] bg-[#FF5722] hover:bg-[#E64A19] text-white font-black px-3 py-1 rounded-full uppercase flex items-center gap-1.5 shadow-md animate-pulse"
-                  title="Notificações de novos remixes da sua arte"
-                >
-                  <Bell size={12} className="animate-bounce" />
-                  <span>{unreadRemixCount} novo{unreadRemixCount === 1 ? '' : 's'} remix{unreadRemixCount === 1 ? '' : 'es'}</span>
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-gray-300">
-              <div className="inline-flex items-center gap-1">
-                <MapPin size={13} className="text-[#FFB800]" />
-                <span className="font-bold">{profileUser.neighborhood || 'Palmas - TO'}</span>
-              </div>
-              {profileUser.instagram && (
-                <a 
-                  href={`https://instagram.com/${profileUser.instagram.replace('@', '')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-[#FFB800] transition"
-                >
-                  <Instagram size={13} />
-                  <span>{profileUser.instagram}</span>
-                </a>
-              )}
-            </div>
-
-            <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed">
-              {profileUser.bio}
-            </p>
-
-            {/* Reputation, Vibes, and Actions */}
-            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
-                <ShieldCheck size={14} className="text-[#FFB800]" />
-                <span className="text-xs font-black">{profileUser.responsa}</span>
-                <span className="text-[9px] uppercase text-gray-400 font-bold">Responsa</span>
-              </div>
-
-              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
-                <Sparkles size={14} className="text-amber-400" />
-                <span className="text-xs font-black">{profileUser.vibe}</span>
-                <span className="text-[9px] uppercase text-gray-400 font-bold">Vibes</span>
-              </div>
-
-              <div className="bg-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
-                <Sword size={14} className="text-red-400" />
-                <span className="text-xs font-black">{totalWins}V</span>
-                <span className="text-[9px] uppercase text-gray-400 font-bold">em Batalhas</span>
-              </div>
-
-              <Link
-                to="/ranking"
-                className="bg-[#FFB800] hover:bg-white text-[#2D2A26] px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1 shadow"
-              >
-                <Trophy size={12} />
-                <span>Ver no Ranking</span>
-              </Link>
-
-              {isOwner && (
-                <button
-                  type="button"
-                  onClick={() => setIsNotificationsModalOpen(true)}
-                  className={`relative px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border shadow ${
-                    unreadRemixCount > 0
-                      ? 'bg-[#FF5722] hover:bg-[#E64A19] text-white border-[#FF5722]'
-                      : 'bg-white/10 hover:bg-[#FFB800] hover:text-[#2D2A26] text-white border-white/10'
-                  }`}
-                  title="Notificações de Remixes das suas Obras Originais"
-                >
-                  <div className="relative">
-                    <Bell size={13} className={unreadRemixCount > 0 ? 'animate-wiggle' : ''} />
-                    {unreadRemixCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#FFB800] rounded-full animate-ping" />
-                    )}
-                  </div>
-                  <span>Notificações</span>
-                  {unreadRemixCount > 0 && (
-                    <span className="bg-[#FFB800] text-[#2D2A26] text-[9px] font-black px-1.5 py-0.2 rounded-full">
-                      {unreadRemixCount}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {isOwner && (
-                <button
-                  onClick={handleOpenEditProfile}
-                  className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition flex items-center gap-1.5 border border-white/10"
-                >
-                  <Edit3 size={12} />
-                  <span>Editar Dados</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Unlocked Badges Bar */}
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFB800]">
-              Insígnias & Conquistas Desbloqueadas ({profileUser.badges.length})
-            </span>
-            <button
-              onClick={() => setActiveTab('badges')}
-              className="text-[10px] text-gray-400 hover:text-white uppercase font-bold transition"
-            >
-              Ver Todas as Badges &rarr;
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {profileUser.badges.map(bId => {
-              const b = BADGES.find(x => x.id === bId) || { id: bId, name: bId, icon: '⭐', description: 'Conquista' };
-              return (
-                <div 
-                  key={bId}
-                  title={`${b.name}: ${b.description}`}
-                  className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-xl text-gray-100 border border-white/10 transition cursor-help group"
-                >
-                  <span className="text-sm group-hover:scale-125 transition-transform">{b.icon}</span>
-                  <span className="text-[10px] font-bold">{b.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <ProfileHeader
+        profileUser={profileUser}
+        isOwner={isOwner}
+        totalWins={totalWins}
+        unreadRemixCount={unreadRemixCount}
+        onOpenEditProfile={handleOpenEditProfile}
+        onOpenNotifications={() => setIsNotificationsModalOpen(true)}
+        onShowAllBadges={() => setActiveTab('badges')}
+      />
 
       {/* Remix Notification Alert Banner for Owner with Direct Link to Lineage Tree */}
       {isOwner && unreadRemixCount > 0 && userRemixNotifications.length > 0 && (
@@ -501,8 +615,8 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-sm font-black uppercase tracking-tight">
-                  {unreadRemixCount === 1 
-                    ? 'Novo Remix Criado da sua Foto!' 
+                  {unreadRemixCount === 1
+                    ? 'Novo Remix Criado da sua Foto!'
                     : `${unreadRemixCount} Novos Remixes Criados da sua Foto!`}
                 </h4>
                 <span className="bg-[#2D2A26] text-[#FFB800] text-[9px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
@@ -536,80 +650,16 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         </div>
       )}
 
-      {/* Content Management Navigation Tabs */}
-      <div className="flex space-x-2 sm:space-x-4 border-b border-gray-100 pb-3 overflow-x-auto no-scrollbar">
-        <button 
-          onClick={() => setActiveTab('bases')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${
-            activeTab === 'bases' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          📸 Fotos Base ({userBases.length})
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('remixes')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${
-            activeTab === 'remixes' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          🎨 Remixes Feitos ({userRemixes.length})
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('received-remixes')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all flex items-center gap-1.5 ${
-            activeTab === 'received-remixes' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          <Bell size={13} className={unreadRemixCount > 0 ? 'text-[#FF5722]' : ''} />
-          <span>Remixes da sua Arte ({userRemixNotifications.length})</span>
-          {unreadRemixCount > 0 && (
-            <span className="bg-[#FF5722] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
-              {unreadRemixCount}
-            </span>
-          )}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('spots')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${
-            activeTab === 'spots' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          📍 Muros Mapeados ({userSpots.length})
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('badges')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${
-            activeTab === 'badges' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          🏆 Todas as Badges ({BADGES.length})
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('battles')} 
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-2xl transition-all ${
-            activeTab === 'battles' 
-              ? 'bg-[#2D2A26] text-[#FFB800] shadow-md' 
-              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          }`}
-        >
-          ⚔️ Histórico da Arena
-        </button>
-      </div>
+      <ProfileTabs
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        basesCount={userBases.length}
+        remixesCount={userRemixes.length}
+        notificationsCount={userRemixNotifications.length}
+        spotsCount={userSpots.length}
+        badgesCount={BADGES.length}
+        unreadRemixCount={unreadRemixCount}
+      />
 
       {/* TAB 1: Minhas Fotos Base */}
       {activeTab === 'bases' && (
@@ -651,15 +701,15 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
                 return (
                   <div key={photo.id} className="bg-white rounded-[2rem] overflow-hidden shadow-md border border-gray-100 flex flex-col group hover:shadow-xl transition-all">
                     <div className="aspect-square relative overflow-hidden bg-gray-100">
-                      <img 
-                        src={photo.imageUrl} 
+                      <img
+                        src={photo.imageUrl}
                         alt={photo.title}
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=600&q=80';
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
                       <div className="absolute top-3 left-3 bg-[#2D2A26]/90 backdrop-blur-md text-[#FFB800] font-black text-[9px] px-2.5 py-1 rounded-full uppercase">
                         📸 Base
@@ -769,15 +819,15 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
                 return (
                   <div key={remix.id} className="bg-white rounded-[2rem] overflow-hidden shadow-md border border-gray-100 flex flex-col group hover:shadow-xl transition-all">
                     <div className="aspect-square relative overflow-hidden bg-gray-100">
-                      <img 
-                        src={remix.imageUrl} 
+                      <img
+                        src={remix.imageUrl}
                         alt={remix.title}
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = 'https://images.unsplash.com/photo-1561055657-b9e0bf0fa360?auto=format&fit=crop&w=600&q=80';
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
                       <div className="absolute top-3 left-3 bg-[#FFB800] text-[#2D2A26] font-black text-[9px] px-2.5 py-1 rounded-full uppercase shadow">
                         🎨 Remix
@@ -958,9 +1008,8 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
                 <div key={spot.id} className="bg-white rounded-[2rem] p-5 shadow-md border border-gray-100 flex flex-col justify-between space-y-4 hover:shadow-xl transition">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                        spot.type === 'permitido' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
+                      <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${spot.type === 'permitido' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
                         {spot.type === 'permitido' ? '✓ Muro Autorizado' : '💡 Ponto Sugerido'}
                       </span>
                       <span className="text-[9px] font-bold text-gray-400">
@@ -1024,18 +1073,16 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               return (
                 <div
                   key={badge.id}
-                  className={`p-5 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${
-                    isUnlocked
-                      ? 'bg-gradient-to-br from-amber-50 to-white border-[#FFB800] shadow-md'
-                      : 'bg-gray-50 border-gray-100 opacity-60'
-                  }`}
+                  className={`p-5 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${isUnlocked
+                    ? 'bg-gradient-to-br from-amber-50 to-white border-[#FFB800] shadow-md'
+                    : 'bg-gray-50 border-gray-100 opacity-60'
+                    }`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-3xl">{badge.icon}</span>
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        isUnlocked ? 'bg-[#FFB800] text-[#2D2A26]' : 'bg-gray-200 text-gray-500'
-                      }`}>
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${isUnlocked ? 'bg-[#FFB800] text-[#2D2A26]' : 'bg-gray-200 text-gray-500'
+                        }`}>
                         {isUnlocked ? 'Desbloqueada' : 'Bloqueada'}
                       </span>
                     </div>
@@ -1135,7 +1182,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               <h3 className="text-2xl font-black uppercase tracking-tight text-[#2D2A26]">
                 Editar Perfil de Artista
               </h3>
-              <button 
+              <button
                 onClick={() => setIsEditProfileOpen(false)}
                 className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full"
               >
@@ -1145,10 +1192,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="profile-name" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Nome Artístico / Vulgo
                 </label>
                 <input
+                  id="profile-name"
                   type="text"
                   required
                   value={editName}
@@ -1159,31 +1207,32 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
               {/* Foto do Perfil com Upload do Dispositivo */}
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                <label htmlFor="avatar-file-input" className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
                   Foto do Perfil (Carregar do Dispositivo)
                 </label>
 
                 <div className="flex items-center gap-4">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-[#FFB800] shadow-md bg-white">
-                    <img 
-                      src={editAvatar} 
-                      alt="Prévia" 
+                    <img
+                      src={editAvatar}
+                      alt="Prévia"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80';
                       }}
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover"
                     />
                   </div>
 
                   <div className="flex-1 space-y-1.5">
-                    <input 
-                      type="file" 
-                      ref={avatarFileInputRef} 
-                      onChange={handleAvatarFileUpload} 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      id="avatar-file-input"
+                      type="file"
+                      ref={avatarFileInputRef}
+                      onChange={handleAvatarFileUpload}
+                      accept="image/*"
+                      className="hidden"
                     />
                     <button
                       type="button"
@@ -1212,10 +1261,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                  <label htmlFor="profile-neighborhood" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                     Bairro em Palmas
                   </label>
                   <select
+                    id="profile-neighborhood"
                     value={editNeighborhood}
                     onChange={(e) => setEditNeighborhood(e.target.value)}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-[#FFB800] outline-none"
@@ -1232,10 +1282,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                  <label htmlFor="profile-level" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                     Nível de Atuação
                   </label>
                   <select
+                    id="profile-level"
                     value={editLevel}
                     onChange={(e) => setEditLevel(e.target.value as UserLevel)}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-[#FFB800] outline-none"
@@ -1248,10 +1299,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="profile-bio" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Bio / Visão Periférica
                 </label>
                 <textarea
+                  id="profile-bio"
                   rows={3}
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
@@ -1260,10 +1312,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="profile-instagram" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Instagram / Contato
                 </label>
                 <input
+                  id="profile-instagram"
                   type="text"
                   value={editInstagram}
                   onChange={(e) => setEditInstagram(e.target.value)}
@@ -1300,7 +1353,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               <h3 className="text-xl font-black uppercase tracking-tight text-[#2D2A26]">
                 Editar Obra Visual
               </h3>
-              <button 
+              <button
                 onClick={() => setEditingPhoto(null)}
                 className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full"
               >
@@ -1310,10 +1363,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
             <form onSubmit={handleSavePhotoEdit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="photo-title" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Título da Obra
                 </label>
                 <input
+                  id="photo-title"
                   type="text"
                   required
                   value={editPhotoTitle}
@@ -1323,10 +1377,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="photo-tags" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Tags (separadas por espaço)
                 </label>
                 <input
+                  id="photo-tags"
                   type="text"
                   value={editPhotoTags}
                   onChange={(e) => setEditPhotoTags(e.target.value)}
@@ -1336,10 +1391,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <label htmlFor="photo-neighborhood" className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
                   Bairro / Localidade
                 </label>
                 <input
+                  id="photo-neighborhood"
                   type="text"
                   value={editPhotoNeighborhood}
                   onChange={(e) => setEditPhotoNeighborhood(e.target.value)}

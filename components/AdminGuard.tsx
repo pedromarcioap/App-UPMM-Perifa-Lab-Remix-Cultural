@@ -1,6 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, ShieldAlert, ArrowLeft, Home, Sparkles } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Lock, ShieldAlert, Home, Sparkles, ShieldCheck } from 'lucide-react';
 
 interface AdminGuardProps {
   isAdmin: boolean;
@@ -9,6 +9,7 @@ interface AdminGuardProps {
 
 export const AdminGuard: React.FC<AdminGuardProps> = ({ isAdmin, children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!isAdmin) {
     return (
@@ -66,5 +67,66 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ isAdmin, children }) => 
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="space-y-4">
+      {/* Central de Navegação do Curador (Admin Command Header) */}
+      <nav className="bg-[#1C1B19] border border-[#3E3A35] rounded-2xl p-2.5 shadow-xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 px-2">
+          <ShieldCheck size={18} className="text-[#FFB800]" />
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#FFB800] block leading-none">
+              BACKOFFICE & CURADORIA
+            </span>
+            <span className="text-xs font-bold text-white leading-none">Central Administrativa</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+          <Link
+            to="/curadoria"
+            className={`min-h-[38px] px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition shrink-0 flex items-center gap-1.5 ${
+              location.pathname === '/curadoria'
+                ? 'bg-[#FFB800] text-[#141311] shadow font-bold'
+                : 'bg-[#242220] text-[#EDE8E1]/70 hover:text-white border border-[#3E3A35]'
+            }`}
+          >
+            <span>[01] Curadoria Popular</span>
+          </Link>
+          <Link
+            to="/admin/challenges"
+            className={`min-h-[38px] px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition shrink-0 flex items-center gap-1.5 ${
+              location.pathname === '/admin/challenges'
+                ? 'bg-[#FFB800] text-[#141311] shadow font-bold'
+                : 'bg-[#242220] text-[#EDE8E1]/70 hover:text-white border border-[#3E3A35]'
+            }`}
+          >
+            <span>[02] Desafios & Editais</span>
+          </Link>
+          <Link
+            to="/admin/sponsorships"
+            className={`min-h-[38px] px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition shrink-0 flex items-center gap-1.5 ${
+              location.pathname === '/admin/sponsorships'
+                ? 'bg-[#FFB800] text-[#141311] shadow font-bold'
+                : 'bg-[#242220] text-[#EDE8E1]/70 hover:text-white border border-[#3E3A35]'
+            }`}
+          >
+            <span>[03] Patrocínios B2B</span>
+          </Link>
+          <Link
+            to="/admin/badges"
+            className={`min-h-[38px] px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition shrink-0 flex items-center gap-1.5 ${
+              location.pathname === '/admin/badges'
+                ? 'bg-[#FFB800] text-[#141311] shadow font-bold'
+                : 'bg-[#242220] text-[#EDE8E1]/70 hover:text-white border border-[#3E3A35]'
+            }`}
+          >
+            <span>[04] Insígnias</span>
+          </Link>
+        </div>
+      </nav>
+
+      {children}
+    </div>
+  );
 };
+

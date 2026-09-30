@@ -256,3 +256,25 @@ export async function getSupabaseCurrentUser(): Promise<User | null> {
     return null;
   }
 }
+
+/**
+ * Autenticação via Google OAuth no Supabase
+ */
+export async function signInWithGoogleSupabase(): Promise<{ error: string | null }> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: 'Supabase não está configurado no arquivo .env.' };
+  }
+  try {
+    const { error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    return { error: error ? error.message : null };
+  } catch (err: any) {
+    return { error: err?.message || 'Erro ao conectar via Google no Supabase.' };
+  }
+}
+
